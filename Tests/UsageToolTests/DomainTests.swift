@@ -59,11 +59,12 @@ struct DomainTests {
         #expect(AppSettings(defaults: defaults).preferences.refreshCadence == .fifteenMinutes)
     }
 
-    @Test func compactCurrencyPlacesMagnitudeSuffixNextToLocalizedNumber() {
-        let amount = Decimal(12_400)
-        #expect(UsageFormatters.currency(amount, compact: true, locale: Locale(identifier: "en_US")) == "$12.4k")
-        #expect(UsageFormatters.currency(amount, compact: true, locale: Locale(identifier: "de_DE")) == "12,4k $")
-        #expect(UsageFormatters.currency(amount, compact: true, locale: Locale(identifier: "fr_FR")) == "12,4k $US")
+    @Test func creditsFormatAlwaysShowsPlainDollarsAndCents() {
+        #expect(UsageFormatters.credits(Decimal(string: "18.2")!) == "$18.20")
+        #expect(UsageFormatters.credits(Decimal(string: "1234.5")!) == "$1234.50")
+        #expect(UsageFormatters.credits(Decimal(string: "0.755")!) == "$0.76")
+        #expect(UsageFormatters.credits(Decimal(12_400)) == "$12400.00")
+        #expect(UsageFormatters.credits(Decimal(string: "-3.5")!) == "-$3.50")
     }
 
     @Test func relativeAgeDoesNotProduceJustNowAgo() {

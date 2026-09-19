@@ -6,24 +6,14 @@ enum UsageFormatters {
         return "\(Int((min(max(fraction, 0), 1) * 100).rounded()))%"
     }
 
-    static func currency(_ amount: Decimal, compact: Bool = false, locale: Locale = .current) -> String {
-        let number = NSDecimalNumber(decimal: amount)
-        let absolute = number.doubleValue.magnitude
-        let formatter = NumberFormatter()
-        formatter.locale = locale
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        if compact, absolute >= 10_000 {
-            formatter.multiplier = 0.001
-            formatter.maximumFractionDigits = 1
-            formatter.minimumFractionDigits = 0
-            formatter.positiveSuffix = "k" + (formatter.positiveSuffix ?? "")
-            formatter.negativeSuffix = "k" + (formatter.negativeSuffix ?? "")
-            return formatter.string(from: number) ?? "—"
-        }
-        formatter.maximumFractionDigits = absolute < 100 ? 2 : 0
-        formatter.minimumFractionDigits = absolute < 100 ? 2 : 0
-        return formatter.string(from: number) ?? "$—"
+    static func credits(_ amount: Decimal) -> String {
+        var rounded = Decimal()
+        var value = amount
+        NSDecimalRound(&rounded, &value, 2, .plain)
+        let sign = rounded < 0 ? "-" : ""
+        let magnitude = rounded < 0 ? -rounded : rounded
+        let digits = NSDecimalNumber(decimal: magnitude * 100).intValue
+        return "\(sign)$\(digits / 100).\(String(format: "%02d", digits % 100))"
     }
 
     static func age(since date: Date, now: Date) -> String {

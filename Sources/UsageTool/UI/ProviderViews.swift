@@ -281,7 +281,7 @@ struct ProviderBlockView: View {
         default: break
         }
         if provider == .openRouter {
-            return snapshot?.credits.map { UsageFormatters.currency($0.remaining) } ?? "—"
+            return snapshot?.credits.map { UsageFormatters.credits($0.remaining) } ?? "—"
         }
         return UsageFormatters.percent(store.headlineWindow(for: provider)?.remainingFraction) ?? "—"
     }
@@ -356,8 +356,8 @@ struct ProviderBlockView: View {
     private func detailView(_ snapshot: UsageSnapshot) -> some View {
         Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
             if provider == .openRouter, let balance = snapshot.credits {
-                detailRow("Total credited", UsageFormatters.currency(balance.totalCredits))
-                detailRow("Total used", UsageFormatters.currency(balance.totalUsage))
+                detailRow("Total credited", UsageFormatters.credits(balance.totalCredits))
+                detailRow("Total used", UsageFormatters.credits(balance.totalUsage))
                 detailRow("Fetched", UsageFormatters.absolute(snapshot.observedAt))
                 if let expiry = snapshot.credential?.expiresAt { detailRow("Management key", "Expires \(expiry.formatted(date: .abbreviated, time: .omitted))") }
                 else { detailRow("Management key", "No expiry") }

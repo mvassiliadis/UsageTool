@@ -218,7 +218,7 @@ final class UsageStore {
         }
         if provider == .openRouter {
             guard let balance = state.snapshot?.credits else { return "—" }
-            return UsageFormatters.currency(balance.remaining, compact: true)
+            return UsageFormatters.credits(balance.remaining)
         }
         return UsageFormatters.percent(headlineWindow(for: provider)?.remainingFraction) ?? "—"
     }
