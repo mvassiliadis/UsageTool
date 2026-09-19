@@ -62,6 +62,17 @@ actor KeychainStore: SecretStore {
     }
 
     func save(_ secret: Data) throws {
+        do { try write(secret) }
+        catch KeychainError.unexpectedStatus(errSecAuthFailed) {
+            // A legacy keychain item carries an ACL pinned to the code signature that
+            // created it, so a rebuilt app can neither read nor update its own item.
+            // The stored key is unrecoverable at that point; replace it outright.
+            _ = try? performAllowingNotFound { query, _ in SecItemDelete(query as CFDictionary) }
+            try write(secret)
+        }
+    }
+
+    private func write(_ secret: Data) throws {
         try perform { query, dataProtection in
             var query = query
             var attributes: [CFString: Any] = [kSecValueData: secret]
