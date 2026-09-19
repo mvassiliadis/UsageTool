@@ -1,178 +1,191 @@
 # UsageTool — Session Handoff
 
-**Updated:** 2026-09-19  
-**Workspace:** `/Users/michaelvassiliadis/Development/experiments/UsageTool`  
-**Current phase:** Research and design are finalized and validated; implementation has not started.
+**Updated:** 2026-09-19
+**Workspace:** `/Users/michaelvassiliadis/Development/experiments/UsageTool`
+**Current phase:** Native implementation and unsigned local validation are complete. Real-provider testing is in progress; signing/notarization is intentionally deferred.
 
 ## Resume first
 
 1. Read this file completely.
-2. Read `Research/Service-Integration-Research.md` completely.
-3. Read `Design/UsageTool-UI-Spec.md` completely.
-4. Inspect the rendered mockups:
-   - `Design/UsageTool-Popover.png`
-   - `Design/UsageTool-Settings.png`
+2. Read `README.md` for build/test instructions.
+3. Read `Documentation/Manual-Verification.md` before changing menu-bar scene bindings.
+4. Read `Research/Service-Integration-Research.md` and `Design/UsageTool-UI-Spec.md` before changing provider or product behavior.
 5. Use the Herdr skill before controlling panes. This work is running inside Herdr.
+
+## Repository state
+
+- Git repository initialized on `main`.
+- Initial implementation commit: `f794fb7` (`Initial UsageTool implementation`).
+- Xcode project: `UsageTool.xcodeproj`.
+- Targets: native UsageTool app, bundled `usagetool-statusline` helper, and `UsageToolTests`.
+- Minimum/primary target: macOS 27; Xcode 27; Swift 6.4.
+- SwiftUI-first, `LSUIElement = YES`, Hardened Runtime enabled, no App Sandbox.
+- Signing, notarization, and signed-Keychain entitlement validation are deferred by user direction.
 
 ## Product
 
-Build a native **macOS 27** Swift utility that lives in the menu bar. Clicking an item opens a compact popover showing:
+UsageTool is a native macOS menu-bar utility showing:
 
 - personal OpenAI Codex subscription windows as percentage remaining;
-- personal Claude subscription windows as percentage remaining; and
+- personal Claude subscription windows reported by Claude Code; and
 - OpenRouter account credits remaining in USD.
 
-The UI must be modern, simple, native, and polished without becoming bland. Numbers are the visual priority. Users can optionally expose separate menu-bar items such as `Codex 73%`, `Claude 42%`, and `$18.20`.
+The normal app exposes a main menu-bar item plus optional independent provider items. Clicking an item opens the shared popover; Settings controls providers, refresh/freshness, menu-bar formatting, launch at login, and privacy/status information.
 
-Settings provide provider setup, refresh/freshness settings, menu-bar formatting, launch at login, and privacy/status information.
-
-## Settled platform decisions
-
-- Minimum and primary target: **macOS 27**.
-- Toolchain detected: Xcode 27.0, macOS SDK 27.0, Swift 6.4.
-- SwiftUI first; AppKit only where needed.
-- Direct distribution as a Developer ID signed/notarized app.
-- Hardened Runtime enabled.
-- **No Mac App Store requirement and no App Sandbox requirement.**
-- `LSUIElement = YES` menu-bar utility.
-- Native/standard Apple technologies; avoid unnecessary third-party dependencies.
-- Workspace is **not yet a Git repository**.
-
-## Settled service integrations
+## Implemented service integrations
 
 ### Codex
 
-Use only the documented local Codex App Server.
+Implemented through the documented local Codex App Server only:
 
-- Launch the configured user-installed `codex` executable with Foundation `Process`.
-- Use newline-delimited JSON over `codex app-server --listen stdio://`.
-- Perform `initialize` then `initialized` before other methods.
-- Read `account/rateLimits/read`; consume `account/rateLimits/updated` notifications.
-- If `rateLimitsByLimitId` exists, use it exclusively; otherwise use legacy `rateLimits`. Never render both.
-- App Server/Codex owns ChatGPT authentication. UsageTool must never read or store Codex credentials.
-- Never use the Pi plugin’s private `https://chatgpt.com/backend-api/wham/usage` approach.
-- Never parse interactive CLI output or scrape a dashboard.
-- Organization API usage/cost endpoints are out of scope.
+- Foundation `Process`, stdio JSONL, bounded framing/buffers, handshake timeout, ordered chunk consumption, reconnect policy, and synchronous quit cleanup.
+- `initialize` → `initialized` before requests.
+- `account/read`, `account/rateLimits/read`, and `account/rateLimits/updated`.
+- `rateLimitsByLimitId` exclusively when present; legacy `rateLimits` fallback otherwise.
+- Dynamic window durations: Codex does not need to report a 5-hour window. Unknown durations receive generated labels and are displayed independently.
+- Current App Server account shape accepts documented `authMode` and the empirically observed `account.type` form.
+- No Codex credential files are read; no model request is issued.
+
+Executable handling was hardened after real-GUI testing:
+
+- Automatic discovery covers GUI `PATH`, standard prefixes, NVM/FNM, Volta, nodenv, asdf, and `n` installs.
+- Settings › Providers › Codex exposes an explicit executable field, **Choose…**, **Automatic**, and resolved-path/origin feedback.
+- A broken explicit path is reported rather than silently replaced.
+- The child receives a minimal allow-listed environment whose `PATH` includes the launcher and shebang interpreter directories, allowing npm/NVM `#!/usr/bin/env node` launchers to work.
+- The old persisted `/usr/local/bin/codex` default migrates to automatic discovery.
+- A real GUI-minimal environment successfully discovered and launched the installed NVM Codex App Server without reading credentials or issuing model requests.
 
 ### Claude
 
-Use only a user-enabled Claude Code `statusLine` adapter.
+Implemented through the user-enabled Claude Code `statusLine` adapter only:
 
-- Claude Code passes status JSON to the adapter on stdin.
-- The adapter retains only `rate_limits.five_hour` and `rate_limits.seven_day`, derives remaining percentages, and atomically writes a sanitized snapshot.
-- No Claude OAuth token, API key, cookie, credential file, dashboard request, or private endpoint.
-- No Claude subscription plan name and no per-model quota: the documented export provides neither.
-- Parse and drop `spend_limit`; it is a gateway spend limit, not personal subscription capacity.
-- Preserve/chain any existing status-line command rather than overwriting it silently.
-- Never modify the user’s actual `~/.claude/settings.json` during automated tests. Use temporary fixture homes/paths.
+- Bundled Swift helper reads stdin and retains only sanitized 5-hour/7-day usage windows.
+- `spend_limit`, model, context, cost, paths, session identifiers, and credentials are dropped.
+- Atomic snapshot writes and tolerant/last-writer-wins reads.
+- Existing status-line commands are chained and preserved across install, reinstall, removal, and recovery from missing manifests.
+- Guided install backs up and merges only `statusLine`; unsupported configuration fails closed to manual instructions.
+- Automated tests use temporary homes and never modify the real `~/.claude/settings.json`.
+- Real Claude configuration mutation remains user-initiated only and has not been used for automated validation.
 
 ### OpenRouter
 
-V1 is account credits only.
+Implemented for account credits only:
 
-- `GET https://openrouter.ai/api/v1/key` validates `is_management_key` and reads `expires_at`.
-- `GET https://openrouter.ai/api/v1/credits` reads `total_credits` and `total_usage`.
-- Remaining USD = `total_credits - total_usage`.
-- Store the management key in Keychain. Never log it.
-- Disclose that management keys can administer account API keys and that no balance-only scope is documented.
-- Handle pre-expiry and expired-key states.
-- Do not implement ordinary-key limits, PKCE, key usage, percentages, or per-model spend.
+- `/api/v1/key` validates management-key status and expiry.
+- `/api/v1/credits` reads cumulative credited/used amounts; remaining USD is their difference.
+- Management key stored through Security.framework Keychain with data-protection Keychain enabled.
+- Expiring, expired, auth, retry/backoff, `Retry-After`, coalescing, and stop-on-401/403 behavior implemented.
+- URL transport is mocked in tests; no live key or provider request is used during automated validation.
+- No ordinary-key mode, PKCE, percentages, key usage, or per-model spend.
 
-## Non-negotiable data/UI behavior
+## Non-negotiable behavior
 
-- Missing, unsupported, stale, expired, partial, and error are distinct states.
-- Missing data is `—` / unavailable, never `0%`.
-- Passing a reset timestamp expires the snapshot; it does not fabricate `100%`.
-- Display each quota window independently.
-- Codex and Claude numbers are **remaining**, not used. Convert documented used percentages with `clamp(100 - used, 0, 100)`.
-- OpenRouter is a dollar balance; do not derive a percentage/bar from cumulative credits.
-- Show source/provenance and observation time.
-- Keep secrets out of UserDefaults, logs, URLs, telemetry, crash reports, and tests.
-- Store OpenRouter secrets with Security.framework Keychain APIs.
+- Missing, unsupported, stale, expired, partial, loading, auth, and network error remain distinct states.
+- Missing data is `—`, never `0%` or `$0.00`.
+- Passing a reset timestamp expires a window; it never fabricates `100%`.
+- Codex/Claude values are remaining percentages; used percentages are clamped and inverted.
+- OpenRouter is a dollar balance and never receives a percentage/bar.
+- Source/provenance and observation time remain visible.
+- Secrets stay out of UserDefaults, logs, URLs, telemetry, crash reports, and fixtures.
+
+## Important runtime fixes
+
+### Menu-bar scene live-lock
+
+The first real app launch produced a blank/dead menu-bar slot. Root cause: `MenuBarExtra(isInserted:)` writes its value back during scene updates, while the original binding setters unconditionally mutated `@Observable` preferences and normalization rewrote them. That created an `AppGraph.graphDidChange()` feedback loop before status-item installation.
+
+Fixes:
+
+- Menu-bar insertion setters are strict no-ops when the value is unchanged.
+- Preference normalization and persistence are idempotent.
+- Settings explicitly activates the accessory app when shown so its window appears in front.
+- Regression coverage lives in `Tests/UsageToolTests/MenuBarSceneTests.swift`.
+- Manual checks and the invariant are documented in `Documentation/Manual-Verification.md`.
+
+Do not introduce observable mutations from scene-level binding getters/setters without preserving this invariant. A healthy idle app uses approximately 0% CPU.
+
+### Safe local preview
+
+A compile-time-only validation variant provides deterministic popover/settings windows with in-memory settings/secrets and disabled providers. It intentionally uses a normal `WindowGroup`; it does not exercise `MenuBarExtra`. See:
+
+- `Documentation/Local-Validation.md`
+- `Documentation/Local-Validation-Report.md`
+
+Use the normal Debug app plus `Documentation/Manual-Verification.md` for real menu-bar/popover/Settings testing.
+
+## Validation completed
+
+- Debug and Release builds completed successfully under Xcode 27/macOS 27.
+- Swift strict-concurrency build is clean.
+- Final suite after Codex discovery/auth fixes: **70/70 tests pass**.
+- Earlier repeated checkpoint runs also completed without failures.
+- Deterministic coverage includes domain/state rules, Codex JSONL/process/discovery/auth, Claude sanitization/configuration, OpenRouter mocked transport/retry/auth, and menu-bar binding invariants.
+- Normal app manually verified: visible template icon, popover click, Settings gear, summary/separate items, idle CPU, and quit cleanup.
+- Safe preview manually inspected populated, error, empty, settings, light, and dark states.
+- No private service endpoints or provider credential-file access exist in production source.
+
+## Known environment diagnostics
+
+These are host/toolchain noise, not UsageTool failures:
+
+- Xcode repeatedly reports `DVTCoreDeviceCore`/CoreSimulator version mismatch because the installed system CoreSimulator framework is older than the Xcode 27 component. Native macOS builds/tests still pass.
+- macOS may log `com.apple.linkd.autoShortcut` XPC connection errors during launch. UsageTool defines no App Intents, and menu-bar behavior works independently of these messages.
+
+Do not delete or replace system private frameworks to suppress these diagnostics.
 
 ## Durable artifacts
 
-- `Research/Service-Integration-Research.md` — reviewed and reconciled implementation research.
-- `Design/UsageTool-UI-Spec.md` — full UI/UX and SwiftUI/AppKit mapping.
-- `Design/UsageTool-Popover.svg` / `.png` — popover visual artifact.
-- `Design/UsageTool-Settings.svg` / `.png` — settings visual artifact.
-- `Design/Assets/ProviderIcons/` — official-provider icon pass currently being completed by Fable.
+- `Research/Service-Integration-Research.md` — reviewed integration research and unresolved external checks.
+- `Design/UsageTool-UI-Spec.md` — UI/UX specification.
+- `Design/UsageTool-Popover.*`, `Design/UsageTool-Settings.*` — visual artifacts.
+- `Design/Assets/ProviderIcons/` — official provider marks and provenance.
+- `README.md` — build, test, preview, and Codex discovery notes.
+- `Documentation/Checkpoint-1-Review-Disposition.md` — first independent review disposition.
+- `Documentation/Local-Validation.md` and `Local-Validation-Report.md` — isolated-preview contract/evidence.
+- `Documentation/Manual-Verification.md` — menu-bar/popover/Settings regression procedure.
 
-## Live Herdr agents
+## Herdr state
 
-Workspace/tab at handoff: `wJ` / `wJ:t1`.
+At the time of this update:
 
-### `ui-designer` — pane `wJ:p5`
+- Workspace/tab: `wJ` / `wJ:t1`.
+- Prior implementation/review agents completed and exited.
+- `codex-path-debug` (Claude Opus 5, high effort) completed the latest Codex discovery/runtime fix in pane `wJ:pA` and is idle if still present.
+- No worker needs to be resumed unless further defects are found.
 
-- Claude Fable, high effort.
-- Idle; all design work is complete and validated.
-- It sourced first-party OpenAI, Claude, and OpenRouter marks, documented provenance/trademark caveats, updated the specification and mockups, and produced opaque 2× PNGs.
-- Final assets:
-  - `Design/Assets/ProviderIcons/openai-logomark.svg`
-  - `Design/Assets/ProviderIcons/claude-spark-clay.svg`
-  - `Design/Assets/ProviderIcons/openrouter-glyph-{cloud,grape,ink,volt}.svg`
-  - `Design/Assets/ProviderIcons/README.md`
-- All SVGs pass `xmllint`; asset safety scans found no scripts, event handlers, `foreignObject`, external references, or raster payloads. The only URL strings in the raw SVGs are normal XML namespace declarations.
+## Remaining work
 
-### `service-review` — pane `wJ:p6`
+User-prioritized next steps:
 
-- Claude Opus 5.
-- Idle; review/reconciliation is complete.
-- The final research brief contains five unresolved implementation questions in §6. Four are implementation/browser compatibility spikes. The former product issue—unsupported Claude plan/per-model fields—has already been removed from all design artifacts.
+1. Continue hands-on testing of the normal Debug app with real local Codex data.
+2. Optionally configure the Claude adapter and OpenRouter management key through explicit user actions, then verify those real integrations.
+3. Fix any UX/runtime defects found during hands-on testing and add regression coverage.
+4. Re-run the complete test suite and normal-app manual checklist before the next release-oriented checkpoint.
 
-## Current render checks
+Deferred until requested:
 
-At handoff, after Fable’s opacity correction began:
+- Developer ID signing and notarization.
+- Signed data-protection-Keychain entitlement validation.
+- Embedded helper distribution-signature verification.
+- Broad Codex version compatibility and remaining sanctioned live/browser checks from Research §6.
+- Forced host-level high-contrast/reduced-motion testing.
 
-```text
-Design/UsageTool-Popover.png: 2680×1580, opaque=True, alpha=[1,1]
-Design/UsageTool-Settings.png: 3800×1760, opaque=True, alpha=[1,1]
-```
+## Running the normal app
 
-The final icon-integrated PNGs were visually verified: the light and dark artboards render correctly, every artboard is present, and nothing is clipped.
+Recommended:
 
-## Task state
+1. Open `UsageTool.xcodeproj`.
+2. Select scheme **UsageTool** and destination **My Mac**.
+3. Press **⌘R**.
+4. The app has no Dock window because it is an `LSUIElement`; use the gauge icon in the menu bar.
 
-- Completed: service research.
-- Completed: initial UI design.
-- Completed: Opus service review and research reconciliation.
-- Completed: removal of unsupported Claude plan/per-model fields.
-- Completed: official provider icons and final opaque renders.
-- Pending: implementation with Codex (`gpt-5.6-sol`, high reasoning).
-- Pending: independent review, build, tests, diagnostics, and fixes.
+For Codex, leave Settings › Providers › Codex › Executable empty to use automatic discovery, or choose an explicit binary. The app displays the resolved executable and discovery origin.
 
-## Immediate next steps
+## Security reminders
 
-1. Read and verify the finalized durable artifacts listed above.
-2. Transition the finished right-side panes into the requested full-height vertical implementation pane. A practical layout is to close the finished service-review pane, end the Fable session, and reuse/expand `wJ:p5` for a fresh Claude Code implementation session.
-3. Start a fresh Codex implementation agent using `gpt-5.6-sol` with high reasoning and edit permissions, named `implementation`.
-4. Tell it to read this handoff, the complete research brief, the complete UI spec, icon README, and mockups before writing code.
-5. Require milestone updates and builds/tests throughout; continue reporting progress often.
-
-## Implementation milestones
-
-1. Create a native Xcode project/scheme and initialize Git.
-2. Implement domain models, normalized provider states, settings persistence, and Keychain wrapper.
-3. Implement Codex App Server JSONL process/protocol adapter with fixtures/tests.
-4. Implement the Swift Claude status-line helper, sanitized atomic snapshot contract, configuration backup/merge/restore flow, and tests using temporary fixtures only.
-5. Implement OpenRouter management-key validation/expiry and credits client with mocked URLProtocol tests.
-6. Implement shared store, refresh/backoff/staleness behavior, menu-bar scenes, popover, settings, accessibility, light/dark behavior, and official icon assets.
-7. Build with `xcodebuild`, run unit/UI-relevant tests, run diagnostics, and fix all failures.
-8. Independently review security, compliance boundaries, secret handling, process lifecycle, JSON decoding, and UX state correctness.
-
-## Validation expectations
-
-- Build cleanly with the installed Xcode 27/macOS 27 SDK.
-- Use strict Swift concurrency safely.
-- No live provider calls or real credential/config modifications in automated tests.
-- No private service endpoints anywhere in source.
-- No secrets in fixtures or logs.
-- Verify all documented error/stale/partial/expired states.
-- Verify menu-bar icon-only, combined summary, and independent provider items.
-- Re-check official documentation links before release.
-
-## User coordination requirements
-
-- Implementation must be performed by a Codex instance using `gpt-5.6-sol` with high reasoning in a vertical Herdr pane.
-- Monitor it rather than leaving it unattended.
-- Report progress frequently.
+- Never call undocumented/private provider endpoints or scrape dashboards.
+- Never read Codex or Claude credentials.
+- Never mutate real `~/.claude/settings.json` in automated tests.
+- Never persist or log an OpenRouter key outside Keychain.
+- Never make model requests merely to refresh usage.
+- Do not treat missing or elapsed data as zero/full capacity.
