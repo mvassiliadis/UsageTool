@@ -1,0 +1,17 @@
+{
+  "rateLimits": {
+    "primary": { "usedPercent": 99, "windowDurationMins": 300, "resetsAt": 1800000000 },
+    "secondary": null,
+    "planType": "legacy-must-be-ignored"
+  },
+  "rateLimitsByLimitId": {
+    "codex": {
+      "limitId": "codex",
+      "limitName": "Codex",
+      "planType": "plus",
+      "primary": { "usedPercent": 27, "windowDurationMins": 300, "resetsAt": 1800000000 },
+      "secondary": { "usedPercent": 42, "windowDurationMins": 10080, "resetsAt": 1800500000 }
+    }
+  }
+}
+

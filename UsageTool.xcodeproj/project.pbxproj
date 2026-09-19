@@ -1,0 +1,143 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* UsageToolApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* UsageToolApp.swift */; };
+		A10000000000000000000002 /* JSONValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* JSONValue.swift */; };
+		A10000000000000000000003 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* Models.swift */; };
+		A10000000000000000000004 /* UsageFormatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* UsageFormatters.swift */; };
+		A10000000000000000000005 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* AppSettings.swift */; };
+		A10000000000000000000006 /* ClaudeAdapterInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* ClaudeAdapterInstaller.swift */; };
+		A10000000000000000000007 /* ClaudeSnapshotReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* ClaudeSnapshotReader.swift */; };
+		A10000000000000000000008 /* ClaudeStatusLineCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* ClaudeStatusLineCore.swift */; };
+		A10000000000000000000009 /* CodexAppServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* CodexAppServer.swift */; };
+		A1000000000000000000000A /* OpenRouterClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* OpenRouterClient.swift */; };
+		A1000000000000000000000B /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* KeychainStore.swift */; };
+		A1000000000000000000000C /* UsageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* UsageStore.swift */; };
+		A1000000000000000000000D /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* DesignTokens.swift */; };
+		A1000000000000000000000E /* PopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* PopoverView.swift */; };
+		A1000000000000000000000F /* ProviderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* ProviderViews.swift */; };
+		A10000000000000000000010 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* SettingsView.swift */; };
+		A10000000000000000000011 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* Assets.xcassets */; };
+		A10000000000000000000012 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* Security.framework */; };
+		A10000000000000000000013 /* ClaudeStatusLineCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* ClaudeStatusLineCore.swift */; };
+		A10000000000000000000014 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* main.swift */; };
+		A10000000000000000000015 /* usagetool-statusline in Copy Helpers */ = {isa = PBXBuildFile; fileRef = A30000000000000000000002 /* usagetool-statusline */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		A10000000000000000000016 /* DomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* DomainTests.swift */; };
+		A10000000000000000000017 /* ClaudeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* ClaudeTests.swift */; };
+		A10000000000000000000018 /* CodexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* CodexTests.swift */; };
+		A10000000000000000000019 /* codex-multi.json in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* codex-multi.json */; };
+		A1000000000000000000001A /* codex-legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* codex-legacy.json */; };
+		A1000000000000000000001B /* OpenRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* OpenRouterTests.swift */; };
+		A1000000000000000000001C /* MenuBarSceneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* MenuBarSceneTests.swift */; };
+		A1000000000000000000001D /* CodexExecutableLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001B /* CodexExecutableLocator.swift */; };
+		A1000000000000000000001E /* CodexDiscoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001C /* CodexDiscoveryTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A40000000000000000000001 = {isa = PBXContainerItemProxy; containerPortal = A90000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = A70000000000000000000002; remoteInfo = UsageToolStatusLine; };
+		A40000000000000000000002 = {isa = PBXContainerItemProxy; containerPortal = A90000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = A70000000000000000000001; remoteInfo = UsageTool; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A50000000000000000000004 /* Copy Helpers */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = Contents/Helpers; dstSubfolderSpec = 1; files = (A10000000000000000000015 /* usagetool-statusline in Copy Helpers */, ); name = "Copy Helpers"; runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* UsageToolApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/App/UsageToolApp.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000002 /* JSONValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Domain/JSONValue.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000003 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Domain/Models.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000004 /* UsageFormatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Domain/UsageFormatters.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000005 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Persistence/AppSettings.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000006 /* ClaudeAdapterInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Providers/Claude/ClaudeAdapterInstaller.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000007 /* ClaudeSnapshotReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Providers/Claude/ClaudeSnapshotReader.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000008 /* ClaudeStatusLineCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Providers/Claude/ClaudeStatusLineCore.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000009 /* CodexAppServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Providers/Codex/CodexAppServer.swift; sourceTree = SOURCE_ROOT; };
+		A2000000000000000000000A /* OpenRouterClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Providers/OpenRouter/OpenRouterClient.swift; sourceTree = SOURCE_ROOT; };
+		A2000000000000000000000B /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Security/KeychainStore.swift; sourceTree = SOURCE_ROOT; };
+		A2000000000000000000000C /* UsageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Store/UsageStore.swift; sourceTree = SOURCE_ROOT; };
+		A2000000000000000000000D /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/UI/DesignTokens.swift; sourceTree = SOURCE_ROOT; };
+		A2000000000000000000000E /* PopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/UI/PopoverView.swift; sourceTree = SOURCE_ROOT; };
+		A2000000000000000000000F /* ProviderViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/UI/ProviderViews.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000010 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/UI/SettingsView.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Sources/UsageTool/Resources/Assets.xcassets; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000012 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		A20000000000000000000013 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageToolStatusLine/main.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000014 /* DomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/UsageToolTests/DomainTests.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000015 /* ClaudeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/UsageToolTests/ClaudeTests.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000016 /* CodexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/UsageToolTests/CodexTests.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000017 /* codex-multi.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Tests/UsageToolTests/Fixtures/codex-multi.json; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000018 /* codex-legacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Tests/UsageToolTests/Fixtures/codex-legacy.json; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000019 /* OpenRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/UsageToolTests/OpenRouterTests.swift; sourceTree = SOURCE_ROOT; };
+		A2000000000000000000001A /* MenuBarSceneTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/UsageToolTests/MenuBarSceneTests.swift; sourceTree = SOURCE_ROOT; };
+		A2000000000000000000001B /* CodexExecutableLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/UsageTool/Providers/Codex/CodexExecutableLocator.swift; sourceTree = SOURCE_ROOT; };
+		A2000000000000000000001C /* CodexDiscoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/UsageToolTests/CodexDiscoveryTests.swift; sourceTree = SOURCE_ROOT; };
+		A30000000000000000000001 /* UsageTool.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UsageTool.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000002 /* usagetool-statusline */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "usagetool-statusline"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000003 /* UsageToolTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UsageToolTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A50000000000000000000002 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000012, ); runOnlyForDeploymentPostprocessing = 0; };
+		A50000000000000000000006 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A50000000000000000000009 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A60000000000000000000001 = {isa = PBXGroup; children = (A60000000000000000000002, A60000000000000000000003, A60000000000000000000004, A20000000000000000000012, ); sourceTree = "<group>"; };
+		A60000000000000000000002 /* Sources */ = {isa = PBXGroup; name = Sources; children = (A20000000000000000000001, A20000000000000000000002, A20000000000000000000003, A20000000000000000000004, A20000000000000000000005, A20000000000000000000006, A20000000000000000000007, A20000000000000000000008, A20000000000000000000009, A2000000000000000000001B, A2000000000000000000000A, A2000000000000000000000B, A2000000000000000000000C, A2000000000000000000000D, A2000000000000000000000E, A2000000000000000000000F, A20000000000000000000010, A20000000000000000000011, A20000000000000000000013, ); sourceTree = "<group>"; };
+		A60000000000000000000003 /* Tests */ = {isa = PBXGroup; name = Tests; children = (A20000000000000000000014, A20000000000000000000015, A20000000000000000000016, A2000000000000000000001C, A20000000000000000000019, A2000000000000000000001A, A20000000000000000000017, A20000000000000000000018, ); sourceTree = "<group>"; };
+		A60000000000000000000004 /* Products */ = {isa = PBXGroup; name = Products; children = (A30000000000000000000001, A30000000000000000000002, A30000000000000000000003, ); sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A70000000000000000000001 /* UsageTool */ = {isa = PBXNativeTarget; buildConfigurationList = AB0000000000000000000001; buildPhases = (A50000000000000000000001, A50000000000000000000002, A50000000000000000000003, A50000000000000000000004, ); buildRules = (); dependencies = (A80000000000000000000001, ); name = UsageTool; productName = UsageTool; productReference = A30000000000000000000001; productType = "com.apple.product-type.application"; };
+		A70000000000000000000002 /* UsageToolStatusLine */ = {isa = PBXNativeTarget; buildConfigurationList = AB0000000000000000000002; buildPhases = (A50000000000000000000005, A50000000000000000000006, A50000000000000000000007, ); buildRules = (); dependencies = (); name = UsageToolStatusLine; productName = "usagetool-statusline"; productReference = A30000000000000000000002; productType = "com.apple.product-type.tool"; };
+		A70000000000000000000003 /* UsageToolTests */ = {isa = PBXNativeTarget; buildConfigurationList = AB0000000000000000000003; buildPhases = (A50000000000000000000008, A50000000000000000000009, A5000000000000000000000A, ); buildRules = (); dependencies = (A80000000000000000000002, ); name = UsageToolTests; productName = UsageToolTests; productReference = A30000000000000000000003; productType = "com.apple.product-type.bundle.unit-test"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A90000000000000000000001 /* Project object */ = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = YES; LastSwiftUpdateCheck = 2700; LastUpgradeCheck = 2700; TargetAttributes = {A70000000000000000000001 = {CreatedOnToolsVersion = 27.0; }; A70000000000000000000002 = {CreatedOnToolsVersion = 27.0; }; A70000000000000000000003 = {CreatedOnToolsVersion = 27.0; TestTargetID = A70000000000000000000001; }; }; }; buildConfigurationList = AB0000000000000000000000; compatibilityVersion = "Xcode 15.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base, ); mainGroup = A60000000000000000000001; productRefGroup = A60000000000000000000004; projectDirPath = ""; projectRoot = ""; targets = (A70000000000000000000001, A70000000000000000000002, A70000000000000000000003, ); };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A50000000000000000000003 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000011, ); runOnlyForDeploymentPostprocessing = 0; };
+		A50000000000000000000007 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A5000000000000000000000A = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000019, A1000000000000000000001A, ); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A50000000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A1000000000000000000001D, A10000000000000000000002, A10000000000000000000003, A10000000000000000000004, A10000000000000000000005, A10000000000000000000006, A10000000000000000000007, A10000000000000000000008, A10000000000000000000009, A1000000000000000000000A, A1000000000000000000000B, A1000000000000000000000C, A1000000000000000000000D, A1000000000000000000000E, A1000000000000000000000F, A10000000000000000000010, ); runOnlyForDeploymentPostprocessing = 0; };
+		A50000000000000000000005 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000013, A10000000000000000000014, ); runOnlyForDeploymentPostprocessing = 0; };
+		A50000000000000000000008 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000016, A10000000000000000000017, A10000000000000000000018, A1000000000000000000001E, A1000000000000000000001B, A1000000000000000000001C, ); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A80000000000000000000001 = {isa = PBXTargetDependency; target = A70000000000000000000002; targetProxy = A40000000000000000000001; };
+		A80000000000000000000002 = {isa = PBXTargetDependency; target = A70000000000000000000001; targetProxy = A40000000000000000000002; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AA0000000000000000000001 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 27.0; SDKROOT = macosx; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; }; name = Debug; };
+		AA0000000000000000000002 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 27.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; }; name = Release; };
+		AA0000000000000000000011 = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_APP_SANDBOX = NO; ENABLE_HARDENED_RUNTIME = YES; ENABLE_TESTABILITY = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = UsageTool; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities"; INFOPLIST_KEY_LSUIElement = YES; MARKETING_VERSION = 1.0.0; PRODUCT_BUNDLE_IDENTIFIER = dev.usagetool.app; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; }; name = Debug; };
+		AA0000000000000000000012 = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_APP_SANDBOX = NO; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = UsageTool; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities"; INFOPLIST_KEY_LSUIElement = YES; MARKETING_VERSION = 1.0.0; PRODUCT_BUNDLE_IDENTIFIER = dev.usagetool.app; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; }; name = Release; };
+		AA0000000000000000000021 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = dev.usagetool.statusline; PRODUCT_NAME = "usagetool-statusline"; SKIP_INSTALL = YES; }; name = Debug; };
+		AA0000000000000000000022 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = dev.usagetool.statusline; PRODUCT_NAME = "usagetool-statusline"; SKIP_INSTALL = YES; }; name = Release; };
+		AA0000000000000000000031 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = dev.usagetool.tests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/UsageTool.app/Contents/MacOS/UsageTool"; }; name = Debug; };
+		AA0000000000000000000032 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = dev.usagetool.tests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/UsageTool.app/Contents/MacOS/UsageTool"; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AB0000000000000000000000 = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000001, AA0000000000000000000002, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		AB0000000000000000000001 = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000011, AA0000000000000000000012, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		AB0000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000021, AA0000000000000000000022, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		AB0000000000000000000003 = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000031, AA0000000000000000000032, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = A90000000000000000000001 /* Project object */;
+}

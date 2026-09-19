@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  UsageTool — Popover mockup (macOS 27), revision 2
+  1 SVG unit = 1 pt. Popover is 340 pt wide, as in the spec (§4.1).
+  Three artboards:
+    1. Light appearance, default state (all providers connected). OpenRouter is a header-only credits block: no bar, no rows.
+    2. Dark appearance, Claude and OpenRouter blocks expanded (detail disclosure; credit totals as plain labeled values).
+       Claude shows only the 5-hour and 7-day windows: the Claude Code export has no per-model quota and no plan name.
+    3. Light appearance, provider states: disconnected, loading, stale, partial, auth error (not a management key),
+       expired management key, offline.
+  Provider marks are the official vector assets in Design/Assets/ProviderIcons (see its README for sources and usage terms).
+  Colors/typography follow Design/UsageTool-UI-Spec.md §2. Fonts fall back gracefully if SF Pro is not installed.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1340" height="790" viewBox="0 0 1340 790">
+  <title>UsageTool popover — light, dark, and states</title>
+  <desc>Native macOS 27 menu-bar popover showing remaining subscription usage for Codex and Claude (last reported by Claude Code) and remaining OpenRouter credits.</desc>
+
+  <style><![CDATA[
+    text { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif; font-variant-numeric: tabular-nums; }
+    .hero { font-family: "SF Pro Rounded", ui-rounded, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 26px; font-weight: 600; letter-spacing: -0.4px; }
+    .heroDash { font-size: 26px; font-weight: 500; }
+    .title   { font-size: 13px; font-weight: 600; }
+    .name    { font-size: 13px; font-weight: 600; }
+    .body    { font-size: 13px; font-weight: 400; }
+    .menubar { font-size: 13px; font-weight: 500; }
+    .sub     { font-size: 11px; font-weight: 400; }
+    .subMed  { font-size: 11px; font-weight: 500; }
+    .val     { font-size: 11px; font-weight: 600; }
+    .cap     { font-size: 10px; font-weight: 400; }
+    .pill    { font-size: 10px; font-weight: 600; }
+    .btn     { font-size: 11px; font-weight: 500; }
+    .artTitle{ font-size: 12px; font-weight: 500; fill: #3C3C43; }
+
+    /* ---------- Light appearance ---------- */
+    .light .art   { fill: #D9DBE3; }
+    .light .strip { fill: #FFFFFF; fill-opacity: 0.55; }
+    .light .panel { fill: #F4F4F6; fill-opacity: 0.97; stroke: rgba(0,0,0,0.10); stroke-width: 0.5; }
+    .light .t1 { fill: #1D1D1F; color: #1D1D1F; }
+    .light .t2 { fill: rgba(0,0,0,0.55); color: rgba(0,0,0,0.55); }
+    .light .t3 { fill: rgba(0,0,0,0.28); color: rgba(0,0,0,0.28); }
+    .light .sep { stroke: rgba(0,0,0,0.09); stroke-width: 1; }
+    .light .track { fill: rgba(0,0,0,0.08); }
+    .light .dotted { fill: none; stroke: rgba(0,0,0,0.25); stroke-width: 1; stroke-dasharray: 2 2; }
+    .light .tileNeutral { fill: rgba(0,0,0,0.06); }
+    .light .pillNeutral { fill: rgba(0,0,0,0.06); }
+    .light .btnFill { fill: #FFFFFF; stroke: rgba(0,0,0,0.13); stroke-width: 0.5; }
+    .light .pressed { fill: rgba(0,0,0,0.12); }
+    .light .codex { fill: #2A9DB3; color: #2A9DB3; }   .light .codexTile { fill: #2A9DB3; fill-opacity: 0.14; }
+    .light .claude { fill: #D97757; color: #D97757; }  .light .claudeTile { fill: #D97757; fill-opacity: 0.14; }
+    .light .router { fill: #7624F4; color: #7624F4; }  .light .routerTile { fill: #7624F4; fill-opacity: 0.12; }
+    .light .oai { fill: #000000; color: #000000; }
+    .light .warn { fill: #F5B800; color: #F5B800; }
+    .light .crit { fill: #E5312A; color: #E5312A; }    .light .critPill { fill: #E5312A; fill-opacity: 0.14; }
+    .light .link { fill: #0A66E0; }
+    .light .shadow { filter: url(#shadowLight); }
+
+    /* ---------- Dark appearance ---------- */
+    .dark .art   { fill: #101013; }
+    .dark .strip { fill: #000000; fill-opacity: 0.35; }
+    .dark .panel { fill: #2A2A2E; fill-opacity: 0.96; stroke: rgba(255,255,255,0.13); stroke-width: 0.5; }
+    .dark .t1 { fill: #F2F2F4; color: #F2F2F4; }
+    .dark .t2 { fill: rgba(255,255,255,0.56); color: rgba(255,255,255,0.56); }
+    .dark .t3 { fill: rgba(255,255,255,0.30); color: rgba(255,255,255,0.30); }
+    .dark .sep { stroke: rgba(255,255,255,0.10); stroke-width: 1; }
+    .dark .track { fill: rgba(255,255,255,0.12); }
+    .dark .dotted { fill: none; stroke: rgba(255,255,255,0.28); stroke-width: 1; stroke-dasharray: 2 2; }
+    .dark .tileNeutral { fill: rgba(255,255,255,0.08); }
+    .dark .pillNeutral { fill: rgba(255,255,255,0.08); }
+    .dark .btnFill { fill: rgba(255,255,255,0.12); stroke: rgba(255,255,255,0.10); stroke-width: 0.5; }
+    .dark .pressed { fill: rgba(255,255,255,0.18); }
+    .dark .codex { fill: #4CC3D9; color: #4CC3D9; }    .dark .codexTile { fill: #4CC3D9; fill-opacity: 0.20; }
+    .dark .claude { fill: #E08A5A; color: #E08A5A; }   .dark .claudeTile { fill: #D97757; fill-opacity: 0.22; }
+    .dark .router { fill: #FCFCFE; color: #FCFCFE; }   .dark .routerTile { fill: #7624F4; fill-opacity: 0.30; }
+    .dark .oai { fill: #FFFFFF; color: #FFFFFF; }
+    .dark .warn { fill: #FFD60A; color: #FFD60A; }
+    .dark .crit { fill: #FF453A; color: #FF453A; }     .dark .critPill { fill: #FF453A; fill-opacity: 0.18; }
+    .dark .link { fill: #409CFF; }
+    .dark .shadow { filter: url(#shadowDark); }
+
+    .dim { opacity: 0.4; }
+  ]]></style>
+
+  <defs>
+    <filter id="shadowLight" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.22"/>
+    </filter>
+    <filter id="shadowDark" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+
+    <!-- Menu-bar main icon: custom SF Symbol "usage.gauge" (open 270° ring + center dot) -->
+    <symbol id="g-menubar" viewBox="0 0 16 16">
+      <path d="M3.76 12.24 A6 6 0 1 1 12.24 12.24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="8" cy="8" r="1.4" fill="currentColor"/>
+    </symbol>
+    <!-- Provider glyphs (SF Symbols equivalents noted) -->
+    <symbol id="g-codex" viewBox="0 0 320 320"><!-- OpenAI logomark, official geometry from Design/Assets/ProviderIcons/openai-logomark.svg; labeled "Codex" in the UI. Monochrome mark: black on light, white on dark. -->
+      <path fill="currentColor" d="m297.06 130.97c7.26-21.79 4.76-45.66-6.85-65.48-17.46-30.4-52.56-46.04-86.84-38.68-15.25-17.18-37.16-26.95-60.13-26.81-35.04-.08-66.13 22.48-76.91 55.82-22.51 4.61-41.94 18.7-53.31 38.67-17.59 30.32-13.58 68.54 9.92 94.54-7.26 21.79-4.76 45.66 6.85 65.48 17.46 30.4 52.56 46.04 86.84 38.68 15.24 17.18 37.16 26.95 60.13 26.8 35.06.09 66.16-22.49 76.94-55.86 22.51-4.61 41.94-18.7 53.31-38.67 17.57-30.32 13.55-68.51-9.94-94.51zm-120.28 168.11c-14.03.02-27.62-4.89-38.39-13.88.49-.26 1.34-.73 1.89-1.07l63.72-36.8c3.26-1.85 5.26-5.32 5.24-9.07v-89.83l26.93 15.55c.29.14.48.42.52.74v74.39c-.04 33.08-26.83 59.9-59.91 59.97zm-128.84-55.03c-7.03-12.14-9.56-26.37-7.15-40.18.47.28 1.3.79 1.89 1.13l63.72 36.8c3.23 1.89 7.23 1.89 10.47 0l77.79-44.92v31.1c.02.32-.13.63-.38.83l-64.41 37.19c-28.69 16.52-65.33 6.7-81.92-21.95zm-16.77-139.09c7-12.16 18.05-21.46 31.21-26.29 0 .55-.03 1.52-.03 2.2v73.61c-.02 3.74 1.98 7.21 5.23 9.06l77.79 44.91-26.93 15.55c-.27.18-.61.21-.91.08l-64.42-37.22c-28.63-16.58-38.45-53.21-21.95-81.89zm221.26 51.49-77.79-44.92 26.93-15.54c.27-.18.61-.21.91-.08l64.42 37.19c28.68 16.57 38.51 53.26 21.94 81.94-7.01 12.14-18.05 21.44-31.2 26.28v-75.81c.03-3.74-1.96-7.2-5.2-9.06zm26.8-40.34c-.47-.29-1.3-.79-1.89-1.13l-63.72-36.8c-3.23-1.89-7.23-1.89-10.47 0l-77.79 44.92v-31.1c-.02-.32.13-.63.38-.83l64.41-37.16c28.69-16.55 65.37-6.7 81.91 22 6.99 12.12 9.52 26.31 7.15 40.1zm-168.51 55.43-26.94-15.55c-.29-.14-.48-.42-.52-.74v-74.39c.02-33.12 26.89-59.96 60.01-59.94 14.01 0 27.57 4.92 38.34 13.88-.49.26-1.33.73-1.89 1.07l-63.72 36.8c-3.26 1.85-5.26 5.31-5.24 9.06l-.04 89.79zm14.63-31.54 34.65-20.01 34.65 20v40.01l-34.65 20-34.65-20z"/>
+    </symbol>
+    <symbol id="g-claude" viewBox="0 0 94 94"><!-- Claude Spark (Clay), official geometry and color from Design/Assets/ProviderIcons/claude-spark-clay.svg; color is fixed per Anthropic Trademark Guidelines. -->
+      <path fill="#D97757" d="M18.7657 62.4437L37.1822 52.1167L37.4857 51.2122L37.1822 50.7085H36.2715L33.1852 50.5208L22.6615 50.2391L13.5545 49.8636L4.70044 49.3942L2.47428 48.9248L0.399902 46.1553L0.602281 44.794L2.47428 43.5266L5.15579 43.7613L11.0754 44.1837L19.98 44.794L26.4055 45.1695L35.9679 46.1553H37.4857L37.6881 45.545L37.1822 45.1695L36.7774 44.794L27.5692 38.5508L17.6021 31.9791L12.3908 28.1769L9.60812 26.2524L8.19147 24.4686L7.58433 20.5256L10.1141 17.7091L13.5545 17.9438L14.4146 18.1785L17.9056 20.8542L25.343 26.6279L35.0572 33.7629L36.4739 34.9364L37.0443 34.5514L37.1316 34.2792L36.4739 33.1996L31.212 23.6706L25.596 13.9539L23.0663 9.91695L22.4086 7.52296C22.1538 6.51831 22.0038 5.68714 22.0038 4.65957L24.8877 0.716544L26.5067 0.200195L30.4025 0.716544L32.0215 2.12477L34.4501 7.66379L38.3458 16.3478L44.4172 28.1769L46.188 31.6975L47.1493 34.9364L47.5035 35.9222H48.1106V35.3589L48.6166 28.6933L49.5273 20.5256L50.438 10.0108L50.7415 7.05356L52.2088 3.48605L55.1433 1.56148L57.42 2.64112L59.292 5.31674L59.039 7.05356L57.926 14.2824L55.7504 25.5952L54.3337 33.1996H55.1433L56.1046 32.2138L59.9497 27.1442L66.3752 19.0704L69.2085 15.8784L72.5478 12.3579L74.6728 10.668H78.7203L81.6548 15.0804L80.3394 19.6337L76.1906 24.8911L72.7502 29.3504L67.8172 35.9595L64.7562 41.2734L65.0307 41.7118L65.7681 41.6489L76.8989 39.255L82.9197 38.1753L90.1041 36.9549L93.3422 38.457L93.6963 40.006L92.4315 43.151L84.7411 45.0287L75.7353 46.8594L62.3244 50.0164L62.1759 50.1358L62.3512 50.3958L68.399 50.9432L70.9794 51.084H77.3037L89.0922 51.9759L92.1785 53.9944L93.9999 56.4822L93.6963 58.4068L88.9404 60.8008L82.5655 59.2987L67.6401 55.7312L62.5301 54.4638H61.8217V54.8862L66.0717 59.064L73.9139 66.1051L83.6786 75.2116L84.1845 77.4648L82.9197 79.2485L81.6042 79.0608L73.0032 72.5829L69.6639 69.6726L62.1759 63.3356H61.67V63.9928L63.3902 66.5276L72.5478 80.2812L73.0032 84.5059L72.3454 85.8672L69.9675 86.7121L67.3871 86.2427L61.9735 78.6852L56.4587 70.2359L52.0064 62.6315L51.4687 62.971L48.8189 91.2654L47.6047 92.7206L44.7714 93.8002L42.3934 92.0164L41.1286 89.1061L42.3934 83.3324L43.9113 75.8219L45.1255 69.8604L46.2386 62.4437L46.9184 59.9661L46.8583 59.8003L46.3153 59.8916L40.7238 67.5603L32.2239 79.0608L25.4948 86.2427L23.8758 86.8999L21.0931 85.4447L21.3461 82.863L22.9145 80.5629L32.2239 68.7338L37.8399 61.3641L41.4594 57.1337L41.4242 56.5218L41.2244 56.5048L16.489 72.6299L12.0873 73.1932L10.1647 71.4094L10.4176 68.4991L11.3283 67.5603L18.7657 62.4437Z"/>
+    </symbol>
+    <symbol id="g-router" viewBox="0 0 1024 730"><!-- OpenRouter glyph, official geometry from Design/Assets/ProviderIcons/openrouter-glyph-*.svg; currentColor is set only to the official Grape (#7624F4) or Cloud (#FCFCFE) colorways. -->
+      <path fill="currentColor" d="M795.893 0C915.776 0 1012.95 97.9963 1012.95 218.88C1012.95 339.764 915.776 437.76 795.893 437.76L1011.2 654.869C1038.55 682.447 1019.18 729.6 980.504 729.6H361.77C161.97 729.6 0 566.273 0 364.8C0 163.327 161.97 0 361.77 0L795.893 0ZM361.77 145.92C241.89 145.92 144.708 243.916 144.708 364.8C144.708 485.684 241.89 583.68 361.77 583.68C481.649 583.68 578.831 485.684 578.831 364.8C578.831 243.916 481.649 145.92 361.77 145.92Z"/>
+    </symbol>
+    <!-- Controls -->
+    <symbol id="g-gear" viewBox="0 0 16 16"><!-- gearshape -->
+      <g fill="currentColor">
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7"/>
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(45 8 8)"/>
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(90 8 8)"/>
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(135 8 8)"/>
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(180 8 8)"/>
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(225 8 8)"/>
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(270 8 8)"/>
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(315 8 8)"/>
+      </g>
+      <circle cx="8" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="2.3"/>
+    </symbol>
+    <symbol id="g-refresh" viewBox="0 0 16 16"><!-- arrow.clockwise -->
+      <path d="M13 8.4 A5 5 0 1 1 10.6 3.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M7.6 3.7 L10.9 3.7 L10.9 7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="g-chevron-down" viewBox="0 0 8 8"><!-- chevron.right rotated 90° when expanded -->
+      <path d="M1.2 2.6 L4 5.4 L6.8 2.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- Status glyphs -->
+    <symbol id="g-excl-circle" viewBox="0 0 16 16"><!-- exclamationmark.circle.fill -->
+      <circle cx="8" cy="8" r="7.2" fill="currentColor"/>
+      <rect x="7.1" y="3.6" width="1.8" height="5.4" rx="0.9" fill="#fff"/>
+      <circle cx="8" cy="11.4" r="1.05" fill="#fff"/>
+    </symbol>
+    <symbol id="g-clock-badge" viewBox="0 0 16 16"><!-- clock.badge.exclamationmark -->
+      <circle cx="7" cy="8" r="5.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M7 4.8 V8 H9.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="13.2" cy="3.2" r="2.6" fill="currentColor"/>
+    </symbol>
+    <symbol id="g-calendar-badge" viewBox="0 0 16 16"><!-- calendar.badge.exclamationmark -->
+      <rect x="1.5" y="3" width="11" height="10.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <rect x="1.5" y="3" width="11" height="3.2" rx="1.4" fill="currentColor"/>
+      <circle cx="13.4" cy="3" r="2.6" fill="currentColor"/>
+    </symbol>
+    <symbol id="g-key-slash" viewBox="0 0 16 16"><!-- key.slash -->
+      <circle cx="5.2" cy="5.2" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M7.1 7.1 L13 13 M10.8 10.8 L12.4 9.2 M9 9 L10.6 7.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M2 14 L14 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="g-wifi-excl" viewBox="0 0 16 16"><!-- wifi.exclamationmark -->
+      <path d="M1.8 6.4 A8.8 8.8 0 0 1 14.2 6.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M4.4 9.2 A5.2 5.2 0 0 1 11.6 9.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <rect x="7.2" y="10.4" width="1.6" height="3" rx="0.8" fill="currentColor"/>
+      <circle cx="8" cy="15" r="0.9" fill="currentColor"/>
+    </symbol>
+    <symbol id="g-spinner" viewBox="0 0 16 16"><!-- ProgressView (small, indeterminate) -->
+      <g fill="currentColor">
+        <rect x="7.1" y="1" width="1.8" height="4" rx="0.9" opacity="1"/>
+        <rect x="7.1" y="1" width="1.8" height="4" rx="0.9" opacity="0.85" transform="rotate(45 8 8)"/>
+        <rect x="7.1" y="1" width="1.8" height="4" rx="0.9" opacity="0.7" transform="rotate(90 8 8)"/>
+        <rect x="7.1" y="1" width="1.8" height="4" rx="0.9" opacity="0.55" transform="rotate(135 8 8)"/>
+        <rect x="7.1" y="1" width="1.8" height="4" rx="0.9" opacity="0.4" transform="rotate(180 8 8)"/>
+        <rect x="7.1" y="1" width="1.8" height="4" rx="0.9" opacity="0.3" transform="rotate(225 8 8)"/>
+        <rect x="7.1" y="1" width="1.8" height="4" rx="0.9" opacity="0.2" transform="rotate(270 8 8)"/>
+        <rect x="7.1" y="1" width="1.8" height="4" rx="0.9" opacity="0.15" transform="rotate(315 8 8)"/>
+      </g>
+    </symbol>
+    <!-- System menu-bar items used only for context in the strip -->
+    <symbol id="g-wifi" viewBox="0 0 16 16">
+      <path d="M1.5 6.2 A9.2 9.2 0 0 1 14.5 6.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M4.2 9.2 A5.4 5.4 0 0 1 11.8 9.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <circle cx="8" cy="12.6" r="1.6" fill="currentColor"/>
+    </symbol>
+    <symbol id="g-cc" viewBox="0 0 16 16"><!-- Control Center -->
+      <rect x="1" y="2.5" width="14" height="4.6" rx="2.3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="4.5" cy="4.8" r="1.4" fill="currentColor"/>
+      <rect x="1" y="8.9" width="14" height="4.6" rx="2.3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="11.5" cy="11.2" r="1.4" fill="currentColor"/>
+    </symbol>
+  </defs>
+
+  <!-- Opaque presentation canvas: covers the whole viewport so rasterized exports are fully opaque. Artboards keep their own light/dark backgrounds. -->
+  <rect id="canvas" x="0" y="0" width="1340" height="790" fill="#E6E7EC"/>
+
+  <!-- ================================================================ -->
+  <!-- Artboard 1 — Light appearance, default                            -->
+  <!-- ================================================================ -->
+  <text x="60" y="18" class="artTitle">1 · Light appearance — default (all providers connected)</text>
+  <g class="light">
+    <rect class="art" x="20" y="28" width="420" height="740" rx="10"/>
+
+    <!-- Menu bar slice -->
+    <g id="light-menubar" transform="translate(60,0)">
+      <rect class="strip" x="-40" y="30" width="420" height="24"/>
+      <rect class="pressed" x="158" y="32" width="24" height="20" rx="5"/>
+      <use xlink:href="#g-menubar" x="162" y="34" width="16" height="16" class="t1"/>
+      <text x="192" y="46.5" class="menubar t1">Codex 73%</text>
+      <use xlink:href="#g-wifi" x="284" y="34" width="16" height="16" class="t1"/>
+      <use xlink:href="#g-cc" x="308" y="34" width="16" height="16" class="t1"/>
+      <text x="334" y="46.5" class="menubar t1">10:55 AM</text>
+    </g>
+
+    <!-- Popover 340 × 346 -->
+    <g id="light-popover" transform="translate(60,62)">
+      <rect class="panel shadow" x="0" y="0" width="340" height="346" rx="16"/>
+
+      <!-- Header -->
+      <text x="16" y="31" class="title t1">Usage</text>
+      <use xlink:href="#g-refresh" x="276" y="18" width="16" height="16" class="t2"/>
+      <use xlink:href="#g-gear" x="304" y="18" width="16" height="16" class="t2"/>
+
+      <!-- Codex block (y 48–150) -->
+      <g id="light-codex">
+        <rect class="codexTile" x="16" y="62" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-codex" x="21" y="67" width="14" height="14" class="oai"/>
+        <text x="50" y="70" class="name t1">Codex</text>
+        <text x="50" y="86" class="sub t2">Via local Codex app-server</text>
+        <text x="324" y="78" text-anchor="end" class="hero t1">73%</text>
+        <text x="324" y="90" text-anchor="end" class="cap t2">5-hour</text>
+        <text x="50" y="111" class="subMed t2">5-hour</text>
+        <rect class="track" x="102" y="104" width="100" height="6" rx="3"/>
+        <rect class="codex" x="102" y="104" width="73" height="6" rx="3"/>
+        <text x="250" y="111" text-anchor="end" class="val t1">73%</text>
+        <text x="324" y="111" text-anchor="end" class="sub t2">2h 14m</text>
+        <text x="50" y="135" class="subMed t2">7-day</text>
+        <rect class="track" x="102" y="128" width="100" height="6" rx="3"/>
+        <rect class="codex" x="102" y="128" width="58" height="6" rx="3"/>
+        <text x="250" y="135" text-anchor="end" class="val t1">58%</text>
+        <text x="324" y="135" text-anchor="end" class="sub t2">Tue 9:00 AM</text>
+        <line class="sep" x1="16" y1="150.5" x2="324" y2="150.5"/>
+      </g>
+
+      <!-- Claude block (y 152–254) -->
+      <g id="light-claude">
+        <rect class="claudeTile" x="16" y="166" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-claude" x="21" y="171" width="14" height="14"/>
+        <text x="50" y="174" class="name t1">Claude</text>
+        <text x="50" y="190" class="sub t2">Last reported by Claude Code · 4m ago</text>
+        <text x="324" y="182" text-anchor="end" class="hero t1">42%</text>
+        <text x="324" y="194" text-anchor="end" class="cap t2">5-hour</text>
+        <text x="50" y="215" class="subMed t2">5-hour</text>
+        <rect class="track" x="102" y="208" width="100" height="6" rx="3"/>
+        <rect class="claude" x="102" y="208" width="42" height="6" rx="3"/>
+        <text x="250" y="215" text-anchor="end" class="val t1">42%</text>
+        <text x="324" y="215" text-anchor="end" class="sub t2">1h 05m</text>
+        <!-- 7-day is Low: yellow fill + exclamationmark.circle.fill glyph; text stays primary -->
+        <text x="50" y="239" class="subMed t2">7-day</text>
+        <rect class="track" x="102" y="232" width="100" height="6" rx="3"/>
+        <rect class="warn" x="102" y="232" width="18" height="6" rx="3"/>
+        <use xlink:href="#g-excl-circle" x="209" y="230" width="10" height="10" class="warn"/>
+        <text x="250" y="239" text-anchor="end" class="val t1">18%</text>
+        <text x="324" y="239" text-anchor="end" class="sub t2">Tue 9:00 AM</text>
+        <line class="sep" x1="16" y1="254.5" x2="324" y2="254.5"/>
+      </g>
+
+      <!-- OpenRouter block (y 256–308): header-only, credits remaining. No bar, no rows. -->
+      <g id="light-openrouter">
+        <rect class="routerTile" x="16" y="270" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-router" x="21" y="275" width="14" height="14" class="router"/>
+        <text x="50" y="278" class="name t1">OpenRouter</text>
+        <text x="50" y="294" class="sub t2">OpenRouter credits API</text>
+        <text x="324" y="286" text-anchor="end" class="hero t1">$18.20</text>
+        <text x="324" y="298" text-anchor="end" class="cap t2">credits remaining</text>
+      </g>
+
+      <!-- Footer -->
+      <text x="16" y="330" class="cap t2">Updated 2m ago · Refreshes every 5 min</text>
+      <text x="324" y="330" text-anchor="end" class="cap t2">Quit</text>
+    </g>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- Artboard 2 — Dark appearance, Claude + OpenRouter expanded          -->
+  <!-- ================================================================ -->
+  <text x="500" y="18" class="artTitle">2 · Dark appearance — Claude and OpenRouter blocks expanded</text>
+  <g class="dark">
+    <rect class="art" x="460" y="28" width="420" height="740" rx="10"/>
+
+    <g id="dark-menubar" transform="translate(500,0)">
+      <rect class="strip" x="-40" y="30" width="420" height="24"/>
+      <rect class="pressed" x="158" y="32" width="24" height="20" rx="5"/>
+      <use xlink:href="#g-menubar" x="162" y="34" width="16" height="16" class="t1"/>
+      <text x="192" y="46.5" class="menubar t1">Codex 73%</text>
+      <use xlink:href="#g-wifi" x="284" y="34" width="16" height="16" class="t1"/>
+      <use xlink:href="#g-cc" x="308" y="34" width="16" height="16" class="t1"/>
+      <text x="334" y="46.5" class="menubar t1">10:55 AM</text>
+    </g>
+
+    <!-- Popover 340 × 483 (two blocks expanded) -->
+    <g id="dark-popover" transform="translate(500,62)">
+      <rect class="panel shadow" x="0" y="0" width="340" height="483" rx="16"/>
+
+      <text x="16" y="31" class="title t1">Usage</text>
+      <use xlink:href="#g-refresh" x="276" y="18" width="16" height="16" class="t2"/>
+      <use xlink:href="#g-gear" x="304" y="18" width="16" height="16" class="t2"/>
+
+      <!-- Codex block (y 48–150) -->
+      <g id="dark-codex">
+        <rect class="codexTile" x="16" y="62" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-codex" x="21" y="67" width="14" height="14" class="oai"/>
+        <text x="50" y="70" class="name t1">Codex</text>
+        <text x="50" y="86" class="sub t2">Via local Codex app-server</text>
+        <text x="324" y="78" text-anchor="end" class="hero t1">73%</text>
+        <text x="324" y="90" text-anchor="end" class="cap t2">5-hour</text>
+        <text x="50" y="111" class="subMed t2">5-hour</text>
+        <rect class="track" x="102" y="104" width="100" height="6" rx="3"/>
+        <rect class="codex" x="102" y="104" width="73" height="6" rx="3"/>
+        <text x="250" y="111" text-anchor="end" class="val t1">73%</text>
+        <text x="324" y="111" text-anchor="end" class="sub t2">2h 14m</text>
+        <text x="50" y="135" class="subMed t2">7-day</text>
+        <rect class="track" x="102" y="128" width="100" height="6" rx="3"/>
+        <rect class="codex" x="102" y="128" width="58" height="6" rx="3"/>
+        <text x="250" y="135" text-anchor="end" class="val t1">58%</text>
+        <text x="324" y="135" text-anchor="end" class="sub t2">Tue 9:00 AM</text>
+        <line class="sep" x1="16" y1="150.5" x2="324" y2="150.5"/>
+      </g>
+
+      <!-- Claude block, EXPANDED (y 152–323): 5-hour and 7-day only (the export has no per-model quota or plan) + detail grid -->
+      <g id="dark-claude-expanded">
+        <rect class="claudeTile" x="16" y="166" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-claude" x="21" y="171" width="14" height="14"/>
+        <text x="50" y="174" class="name t1">Claude</text>
+        <text x="50" y="190" class="sub t2">Last reported by Claude Code · 4m ago</text>
+        <text x="324" y="182" text-anchor="end" class="hero t1">42%</text>
+        <!-- hero caption carries the disclosure chevron (rotated down while expanded) -->
+        <text x="312" y="194" text-anchor="end" class="cap t2">5-hour</text>
+        <use xlink:href="#g-chevron-down" x="316" y="186.5" width="8" height="8" class="t3"/>
+        <text x="50" y="215" class="subMed t2">5-hour</text>
+        <rect class="track" x="102" y="208" width="100" height="6" rx="3"/>
+        <rect class="claude" x="102" y="208" width="42" height="6" rx="3"/>
+        <text x="250" y="215" text-anchor="end" class="val t1">42%</text>
+        <text x="324" y="215" text-anchor="end" class="sub t2">1h 05m</text>
+        <text x="50" y="239" class="subMed t2">7-day</text>
+        <rect class="track" x="102" y="232" width="100" height="6" rx="3"/>
+        <rect class="warn" x="102" y="232" width="18" height="6" rx="3"/>
+        <use xlink:href="#g-excl-circle" x="209" y="230" width="10" height="10" class="warn"/>
+        <text x="250" y="239" text-anchor="end" class="val t1">18%</text>
+        <text x="324" y="239" text-anchor="end" class="sub t2">Tue 9:00 AM</text>
+        <!-- detail grid (Grid, 2 columns, text selectable). No plan row, no model row. -->
+        <g id="dark-claude-detail">
+          <text x="50" y="262" class="sub t2">5-hour resets</text>   <text x="150" y="262" class="sub t1">Today, 4:32 PM</text>
+          <text x="50" y="277" class="sub t2">7-day resets</text>    <text x="150" y="277" class="sub t1">Tue, Sep 22, 9:00 AM</text>
+          <text x="50" y="292" class="sub t2">Reported</text>        <text x="150" y="292" class="sub t1">Sep 19, 10:51 AM</text>
+          <text x="50" y="307" class="sub t2">Snapshot</text>        <text x="150" y="307" class="sub t1">…/UsageTool/claude-usage.json</text>
+        </g>
+        <line class="sep" x1="16" y1="323.5" x2="324" y2="323.5"/>
+      </g>
+
+      <!-- OpenRouter block, EXPANDED (y 325–445; authored at 364–484 and shifted by translate(0,-39)): credit totals as plain labeled values, no fraction -->
+      <g id="dark-openrouter-expanded" transform="translate(0,-39)">
+        <rect class="routerTile" x="16" y="378" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-router" x="21" y="383" width="14" height="14" class="router"/>
+        <text x="50" y="386" class="name t1">OpenRouter</text>
+        <text x="50" y="402" class="sub t2">OpenRouter credits API</text>
+        <text x="324" y="394" text-anchor="end" class="hero t1">$18.20</text>
+        <text x="312" y="406" text-anchor="end" class="cap t2">credits remaining</text>
+        <use xlink:href="#g-chevron-down" x="316" y="398.5" width="8" height="8" class="t3"/>
+        <g id="dark-openrouter-detail">
+          <text x="50" y="425" class="sub t2">Total credited</text>  <text x="150" y="425" class="sub t1">$50.00</text>
+          <text x="50" y="440" class="sub t2">Total used</text>      <text x="150" y="440" class="sub t1">$31.80</text>
+          <text x="50" y="455" class="sub t2">Fetched</text>         <text x="150" y="455" class="sub t1">Sep 19, 10:53 AM</text>
+          <text x="50" y="470" class="sub t2">Management key</text>  <text x="150" y="470" class="sub t1">Expires Oct 19, 2026</text>
+        </g>
+      </g>
+
+      <text x="16" y="467" class="cap t2">Updated 2m ago · Refreshes every 5 min</text>
+      <text x="324" y="467" text-anchor="end" class="cap t2">Quit</text>
+    </g>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- Artboard 3 — Provider states (light)                               -->
+  <!-- ================================================================ -->
+  <text x="940" y="18" class="artTitle">3 · Provider states (light)</text>
+  <g class="light">
+    <rect class="art" x="900" y="28" width="420" height="740" rx="10"/>
+
+    <g id="states-popover" transform="translate(940,62)">
+      <rect class="panel shadow" x="0" y="0" width="340" height="678" rx="16"/>
+      <text x="16" y="31" class="title t1">Usage</text>
+      <use xlink:href="#g-refresh" x="276" y="18" width="16" height="16" class="t2"/>
+      <use xlink:href="#g-gear" x="304" y="18" width="16" height="16" class="t2"/>
+
+      <!-- 1. Disconnected (compact, 36 pt): OpenRouter not set up -->
+      <g id="state-disconnected">
+        <rect class="tileNeutral" x="16" y="54" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-router" x="21" y="59" width="14" height="14" class="router"/>
+        <text x="50" y="70" class="name t1">OpenRouter<tspan class="body t2"> · Not set up</tspan></text>
+        <rect class="btnFill" x="262" y="55" width="62" height="22" rx="6"/>
+        <text x="293" y="70" text-anchor="middle" class="btn t1">Set up…</text>
+        <line class="sep" x1="16" y1="84.5" x2="324" y2="84.5"/>
+      </g>
+
+      <!-- 2. Loading, first fetch: Codex -->
+      <g id="state-loading">
+        <rect class="codexTile" x="16" y="100" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-codex" x="21" y="105" width="14" height="14" class="oai"/>
+        <text x="50" y="108" class="name t1">Codex</text>
+        <text x="50" y="124" class="sub t2">Loading…</text>
+        <use xlink:href="#g-spinner" x="288" y="104" width="12" height="12" class="t2"/>
+        <text x="324" y="116" text-anchor="end" class="heroDash t3">—</text>
+        <text x="50" y="149" class="subMed t2">5-hour</text>
+        <rect class="dotted" x="102.5" y="142.5" width="99" height="5" rx="2.5"/>
+        <text x="250" y="149" text-anchor="end" class="val t3">—</text>
+        <text x="50" y="173" class="subMed t2">7-day</text>
+        <rect class="dotted" x="102.5" y="166.5" width="99" height="5" rx="2.5"/>
+        <text x="250" y="173" text-anchor="end" class="val t3">—</text>
+        <line class="sep" x1="16" y1="188.5" x2="324" y2="188.5"/>
+      </g>
+
+      <!-- 3. Stale: Claude, 3 h without a report. Values kept, dimmed; pill replaces hero caption -->
+      <g id="state-stale">
+        <rect class="claudeTile" x="16" y="204" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-claude" x="21" y="209" width="14" height="14"/>
+        <text x="50" y="212" class="name t1">Claude</text>
+        <text x="50" y="228" class="sub t2">Last reported by Claude Code · 3h ago</text>
+        <text x="324" y="220" text-anchor="end" class="hero t2">42%</text>
+        <rect class="pillNeutral" x="270" y="224" width="54" height="16" rx="8"/>
+        <use xlink:href="#g-clock-badge" x="276" y="227" width="10" height="10" class="t2"/>
+        <text x="290" y="235.5" class="pill t2">Stale</text>
+        <text x="50" y="253" class="subMed t2">5-hour</text>
+        <rect class="track" x="102" y="246" width="100" height="6" rx="3"/>
+        <rect class="claude dim" x="102" y="246" width="42" height="6" rx="3"/>
+        <text x="250" y="253" text-anchor="end" class="val t2">42%</text>
+        <text x="324" y="253" text-anchor="end" class="sub t3">—</text>
+        <text x="50" y="277" class="subMed t2">7-day</text>
+        <rect class="track" x="102" y="270" width="100" height="6" rx="3"/>
+        <rect class="warn dim" x="102" y="270" width="18" height="6" rx="3"/>
+        <use xlink:href="#g-excl-circle" x="209" y="268" width="10" height="10" class="warn"/>
+        <text x="250" y="277" text-anchor="end" class="val t2">18%</text>
+        <text x="324" y="277" text-anchor="end" class="sub t2">Tue 9:00 AM</text>
+        <line class="sep" x1="16" y1="292.5" x2="324" y2="292.5"/>
+      </g>
+
+      <!-- 4. Partial: Claude report without a 7-day window. The missing row is the signal; never zero. -->
+      <g id="state-partial">
+        <rect class="claudeTile" x="16" y="308" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-claude" x="21" y="313" width="14" height="14"/>
+        <text x="50" y="316" class="name t1">Claude</text>
+        <text x="50" y="332" class="sub t2">Last reported by Claude Code · 4m ago</text>
+        <text x="324" y="324" text-anchor="end" class="hero t1">42%</text>
+        <text x="324" y="336" text-anchor="end" class="cap t2">5-hour</text>
+        <text x="50" y="357" class="subMed t2">5-hour</text>
+        <rect class="track" x="102" y="350" width="100" height="6" rx="3"/>
+        <rect class="claude" x="102" y="350" width="42" height="6" rx="3"/>
+        <text x="250" y="357" text-anchor="end" class="val t1">42%</text>
+        <text x="324" y="357" text-anchor="end" class="sub t2">1h 05m</text>
+        <text x="50" y="381" class="subMed t2">7-day</text>
+        <rect class="dotted" x="102.5" y="374.5" width="99" height="5" rx="2.5"/>
+        <text x="250" y="381" text-anchor="end" class="val t3">—</text>
+        <text x="324" y="381" text-anchor="end" class="sub t2">Not reported</text>
+        <line class="sep" x1="16" y1="396.5" x2="324" y2="396.5"/>
+      </g>
+
+      <!-- 5. Auth error: OpenRouter key is not a management key (validated via /api/v1/key) -->
+      <g id="state-auth-error">
+        <rect class="routerTile" x="16" y="412" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-router" x="21" y="417" width="14" height="14" class="router"/>
+        <text x="50" y="420" class="name t1">OpenRouter</text>
+        <text x="50" y="436" class="sub t2">Not a management key</text>
+        <text x="324" y="428" text-anchor="end" class="heroDash t3">—</text>
+        <rect class="critPill" x="248" y="432" width="76" height="16" rx="8"/>
+        <use xlink:href="#g-key-slash" x="254" y="435" width="10" height="10" class="crit"/>
+        <text x="268" y="443.5" class="pill crit">Auth error</text>
+        <text x="50" y="471" class="sub t2">This key can’t read credits.</text>
+        <rect class="btnFill" x="276" y="456" width="48" height="22" rx="6"/>
+        <text x="300" y="471" text-anchor="middle" class="btn t1">Fix…</text>
+        <line class="sep" x1="16" y1="480.5" x2="324" y2="480.5"/>
+      </g>
+
+      <!-- 6. Expired credential: management key past expires_at -->
+      <g id="state-expired">
+        <rect class="routerTile" x="16" y="496" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-router" x="21" y="501" width="14" height="14" class="router"/>
+        <text x="50" y="504" class="name t1">OpenRouter</text>
+        <text x="50" y="520" class="sub t2">Management key expired</text>
+        <text x="324" y="512" text-anchor="end" class="heroDash t3">—</text>
+        <rect class="critPill" x="262" y="516" width="62" height="16" rx="8"/>
+        <use xlink:href="#g-calendar-badge" x="268" y="519" width="10" height="10" class="crit"/>
+        <text x="282" y="527.5" class="pill crit">Expired</text>
+        <text x="50" y="555" class="sub t2">Expired Sep 18. Create a new key.</text>
+        <rect class="btnFill" x="276" y="540" width="48" height="22" rx="6"/>
+        <text x="300" y="555" text-anchor="middle" class="btn t1">Fix…</text>
+        <line class="sep" x1="16" y1="564.5" x2="324" y2="564.5"/>
+      </g>
+
+      <!-- 7. Network error with previous snapshot: header-only block, value kept and dimmed, Retry link -->
+      <g id="state-offline">
+        <rect class="routerTile" x="16" y="580" width="24" height="24" rx="6"/>
+        <use xlink:href="#g-router" x="21" y="585" width="14" height="14" class="router"/>
+        <text x="50" y="588" class="name t1">OpenRouter</text>
+        <text x="50" y="604" class="sub t2">Couldn’t refresh · showing 12m ago</text>
+        <text x="324" y="596" text-anchor="end" class="hero t2">$18.20</text>
+        <rect class="pillNeutral" x="264" y="600" width="60" height="16" rx="8"/>
+        <use xlink:href="#g-wifi-excl" x="270" y="603" width="10" height="10" class="t2"/>
+        <text x="284" y="611.5" class="pill t2">Offline</text>
+        <text x="50" y="628" class="subMed link">Retry</text>
+      </g>
+
+      <text x="16" y="662" class="cap t2">Updated 12m ago · Refreshes every 5 min</text>
+      <text x="324" y="662" text-anchor="end" class="cap t2">Quit</text>
+    </g>
+  </g>
+</svg>

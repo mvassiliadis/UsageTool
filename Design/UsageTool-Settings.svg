@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  UsageTool — Settings mockup (macOS 27, light appearance), revision 2
+  1 SVG unit = 1 pt. Window is 560 pt wide (spec §7.1). Artboards:
+    1. Providers tab — Codex (local App Server), Claude (status-line adapter, managed snapshot), OpenRouter (management key)
+    2. Menu Bar tab — live preview, main item style, separate text items, warning styling
+    3. Sheets — "About OpenRouter management keys" (§7.7) and "Set up the Claude Code status-line adapter" (§7.5)
+  Scope: Codex and Claude expose personal subscription limits only. The only key field in the app is OpenRouter's management key.
+  Provider marks are the official vector assets in Design/Assets/ProviderIcons (see its README for sources and usage terms).
+  Colors/typography follow Design/UsageTool-UI-Spec.md §2 and §7.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1900" height="880" viewBox="0 0 1900 880">
+  <title>UsageTool settings — Providers, Menu Bar, and setup sheets</title>
+  <desc>Native macOS 27 Settings window with toolbar tabs and grouped forms for configuring providers and menu-bar items, plus the two setup sheets.</desc>
+
+  <style><![CDATA[
+    text { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif; font-variant-numeric: tabular-nums; }
+    .artTitle { font-size: 12px; font-weight: 500; fill: #3C3C43; }
+    .winTitle { font-size: 13px; font-weight: 600; }
+    .sheetTitle { font-size: 15px; font-weight: 600; }
+    .tab      { font-size: 11px; font-weight: 500; }
+    .h        { font-size: 13px; font-weight: 600; }
+    .body     { font-size: 13px; font-weight: 400; }
+    .p        { font-size: 12px; font-weight: 400; }
+    .sub      { font-size: 11px; font-weight: 400; }
+    .subMed   { font-size: 11px; font-weight: 500; }
+    .ctl      { font-size: 12px; font-weight: 400; }
+    .btn      { font-size: 12px; font-weight: 500; }
+    .menubar  { font-size: 13px; font-weight: 500; }
+    .mono     { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+    .monoSm   { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; }
+
+    .canvas { fill: #D9DBE3; }
+    .win    { fill: #ECECEE; stroke: rgba(0,0,0,0.16); stroke-width: 0.5; filter: url(#winShadow); }
+    .sheet  { fill: #F2F2F4; stroke: rgba(0,0,0,0.16); stroke-width: 0.5; filter: url(#winShadow); }
+    .group  { fill: #FFFFFF; stroke: rgba(0,0,0,0.08); stroke-width: 0.5; }
+    .rowSep { stroke: rgba(0,0,0,0.07); stroke-width: 1; }
+    .t1 { fill: #1D1D1F; color: #1D1D1F; }
+    .t2 { fill: rgba(0,0,0,0.55); color: rgba(0,0,0,0.55); }
+    .t3 { fill: rgba(0,0,0,0.28); color: rgba(0,0,0,0.28); }
+    .accent { fill: #0A66E0; color: #0A66E0; }
+    .accentText { fill: #0A66E0; }
+    .tabSel { fill: rgba(0,0,0,0.06); }
+    .btnFill { fill: #FFFFFF; stroke: rgba(0,0,0,0.14); stroke-width: 0.5; filter: url(#ctlShadow); }
+    .btnProminent { fill: #0A66E0; filter: url(#ctlShadow); }
+    .btnDisabled { fill: rgba(255,255,255,0.6); stroke: rgba(0,0,0,0.08); stroke-width: 0.5; }
+    .field { fill: #FFFFFF; stroke: rgba(0,0,0,0.16); stroke-width: 0.5; }
+    .segBg { fill: rgba(0,0,0,0.05); }
+    .segSel { fill: #FFFFFF; stroke: rgba(0,0,0,0.10); stroke-width: 0.5; filter: url(#ctlShadow); }
+    .switchOn { fill: #0A66E0; }
+    .switchOff { fill: rgba(0,0,0,0.14); }
+    .knob { fill: #FFFFFF; filter: url(#ctlShadow); }
+    .green { fill: #2DB84D; color: #2DB84D; }
+    .strip { fill: #F4F4F6; stroke: rgba(0,0,0,0.10); stroke-width: 0.5; }
+    .codex { fill: #2A9DB3; color: #2A9DB3; }   .codexTile { fill: #2A9DB3; fill-opacity: 0.14; }
+    .claude { fill: #D97757; color: #D97757; }  .claudeTile { fill: #D97757; fill-opacity: 0.14; }
+    .router { fill: #7624F4; color: #7624F4; }  .routerTile { fill: #7624F4; fill-opacity: 0.12; }
+    .oai { fill: #000000; color: #000000; }
+    .white { fill: #FFFFFF; }
+  ]]></style>
+
+  <defs>
+    <filter id="winShadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity="0.28"/>
+    </filter>
+    <filter id="ctlShadow" x="-10%" y="-20%" width="120%" height="160%">
+      <feDropShadow dx="0" dy="0.5" stdDeviation="0.6" flood-color="#000" flood-opacity="0.18"/>
+    </filter>
+
+    <!-- provider glyphs (same as popover mockup) -->
+    <symbol id="g-codex" viewBox="0 0 320 320"><!-- OpenAI logomark, official geometry from Design/Assets/ProviderIcons/openai-logomark.svg; labeled "Codex" in the UI. Monochrome mark: black on light, white on dark. -->
+      <path fill="currentColor" d="m297.06 130.97c7.26-21.79 4.76-45.66-6.85-65.48-17.46-30.4-52.56-46.04-86.84-38.68-15.25-17.18-37.16-26.95-60.13-26.81-35.04-.08-66.13 22.48-76.91 55.82-22.51 4.61-41.94 18.7-53.31 38.67-17.59 30.32-13.58 68.54 9.92 94.54-7.26 21.79-4.76 45.66 6.85 65.48 17.46 30.4 52.56 46.04 86.84 38.68 15.24 17.18 37.16 26.95 60.13 26.8 35.06.09 66.16-22.49 76.94-55.86 22.51-4.61 41.94-18.7 53.31-38.67 17.57-30.32 13.55-68.51-9.94-94.51zm-120.28 168.11c-14.03.02-27.62-4.89-38.39-13.88.49-.26 1.34-.73 1.89-1.07l63.72-36.8c3.26-1.85 5.26-5.32 5.24-9.07v-89.83l26.93 15.55c.29.14.48.42.52.74v74.39c-.04 33.08-26.83 59.9-59.91 59.97zm-128.84-55.03c-7.03-12.14-9.56-26.37-7.15-40.18.47.28 1.3.79 1.89 1.13l63.72 36.8c3.23 1.89 7.23 1.89 10.47 0l77.79-44.92v31.1c.02.32-.13.63-.38.83l-64.41 37.19c-28.69 16.52-65.33 6.7-81.92-21.95zm-16.77-139.09c7-12.16 18.05-21.46 31.21-26.29 0 .55-.03 1.52-.03 2.2v73.61c-.02 3.74 1.98 7.21 5.23 9.06l77.79 44.91-26.93 15.55c-.27.18-.61.21-.91.08l-64.42-37.22c-28.63-16.58-38.45-53.21-21.95-81.89zm221.26 51.49-77.79-44.92 26.93-15.54c.27-.18.61-.21.91-.08l64.42 37.19c28.68 16.57 38.51 53.26 21.94 81.94-7.01 12.14-18.05 21.44-31.2 26.28v-75.81c.03-3.74-1.96-7.2-5.2-9.06zm26.8-40.34c-.47-.29-1.3-.79-1.89-1.13l-63.72-36.8c-3.23-1.89-7.23-1.89-10.47 0l-77.79 44.92v-31.1c-.02-.32.13-.63.38-.83l64.41-37.16c28.69-16.55 65.37-6.7 81.91 22 6.99 12.12 9.52 26.31 7.15 40.1zm-168.51 55.43-26.94-15.55c-.29-.14-.48-.42-.52-.74v-74.39c.02-33.12 26.89-59.96 60.01-59.94 14.01 0 27.57 4.92 38.34 13.88-.49.26-1.33.73-1.89 1.07l-63.72 36.8c-3.26 1.85-5.26 5.31-5.24 9.06l-.04 89.79zm14.63-31.54 34.65-20.01 34.65 20v40.01l-34.65 20-34.65-20z"/>
+    </symbol>
+    <symbol id="g-claude" viewBox="0 0 94 94"><!-- Claude Spark (Clay), official geometry and color from Design/Assets/ProviderIcons/claude-spark-clay.svg; color is fixed per Anthropic Trademark Guidelines. -->
+      <path fill="#D97757" d="M18.7657 62.4437L37.1822 52.1167L37.4857 51.2122L37.1822 50.7085H36.2715L33.1852 50.5208L22.6615 50.2391L13.5545 49.8636L4.70044 49.3942L2.47428 48.9248L0.399902 46.1553L0.602281 44.794L2.47428 43.5266L5.15579 43.7613L11.0754 44.1837L19.98 44.794L26.4055 45.1695L35.9679 46.1553H37.4857L37.6881 45.545L37.1822 45.1695L36.7774 44.794L27.5692 38.5508L17.6021 31.9791L12.3908 28.1769L9.60812 26.2524L8.19147 24.4686L7.58433 20.5256L10.1141 17.7091L13.5545 17.9438L14.4146 18.1785L17.9056 20.8542L25.343 26.6279L35.0572 33.7629L36.4739 34.9364L37.0443 34.5514L37.1316 34.2792L36.4739 33.1996L31.212 23.6706L25.596 13.9539L23.0663 9.91695L22.4086 7.52296C22.1538 6.51831 22.0038 5.68714 22.0038 4.65957L24.8877 0.716544L26.5067 0.200195L30.4025 0.716544L32.0215 2.12477L34.4501 7.66379L38.3458 16.3478L44.4172 28.1769L46.188 31.6975L47.1493 34.9364L47.5035 35.9222H48.1106V35.3589L48.6166 28.6933L49.5273 20.5256L50.438 10.0108L50.7415 7.05356L52.2088 3.48605L55.1433 1.56148L57.42 2.64112L59.292 5.31674L59.039 7.05356L57.926 14.2824L55.7504 25.5952L54.3337 33.1996H55.1433L56.1046 32.2138L59.9497 27.1442L66.3752 19.0704L69.2085 15.8784L72.5478 12.3579L74.6728 10.668H78.7203L81.6548 15.0804L80.3394 19.6337L76.1906 24.8911L72.7502 29.3504L67.8172 35.9595L64.7562 41.2734L65.0307 41.7118L65.7681 41.6489L76.8989 39.255L82.9197 38.1753L90.1041 36.9549L93.3422 38.457L93.6963 40.006L92.4315 43.151L84.7411 45.0287L75.7353 46.8594L62.3244 50.0164L62.1759 50.1358L62.3512 50.3958L68.399 50.9432L70.9794 51.084H77.3037L89.0922 51.9759L92.1785 53.9944L93.9999 56.4822L93.6963 58.4068L88.9404 60.8008L82.5655 59.2987L67.6401 55.7312L62.5301 54.4638H61.8217V54.8862L66.0717 59.064L73.9139 66.1051L83.6786 75.2116L84.1845 77.4648L82.9197 79.2485L81.6042 79.0608L73.0032 72.5829L69.6639 69.6726L62.1759 63.3356H61.67V63.9928L63.3902 66.5276L72.5478 80.2812L73.0032 84.5059L72.3454 85.8672L69.9675 86.7121L67.3871 86.2427L61.9735 78.6852L56.4587 70.2359L52.0064 62.6315L51.4687 62.971L48.8189 91.2654L47.6047 92.7206L44.7714 93.8002L42.3934 92.0164L41.1286 89.1061L42.3934 83.3324L43.9113 75.8219L45.1255 69.8604L46.2386 62.4437L46.9184 59.9661L46.8583 59.8003L46.3153 59.8916L40.7238 67.5603L32.2239 79.0608L25.4948 86.2427L23.8758 86.8999L21.0931 85.4447L21.3461 82.863L22.9145 80.5629L32.2239 68.7338L37.8399 61.3641L41.4594 57.1337L41.4242 56.5218L41.2244 56.5048L16.489 72.6299L12.0873 73.1932L10.1647 71.4094L10.4176 68.4991L11.3283 67.5603L18.7657 62.4437Z"/>
+    </symbol>
+    <symbol id="g-router" viewBox="0 0 1024 730"><!-- OpenRouter glyph, official geometry from Design/Assets/ProviderIcons/openrouter-glyph-*.svg; currentColor is set only to the official Grape (#7624F4) or Cloud (#FCFCFE) colorways. -->
+      <path fill="currentColor" d="M795.893 0C915.776 0 1012.95 97.9963 1012.95 218.88C1012.95 339.764 915.776 437.76 795.893 437.76L1011.2 654.869C1038.55 682.447 1019.18 729.6 980.504 729.6H361.77C161.97 729.6 0 566.273 0 364.8C0 163.327 161.97 0 361.77 0L795.893 0ZM361.77 145.92C241.89 145.92 144.708 243.916 144.708 364.8C144.708 485.684 241.89 583.68 361.77 583.68C481.649 583.68 578.831 485.684 578.831 364.8C578.831 243.916 481.649 145.92 361.77 145.92Z"/>
+    </symbol>
+    <symbol id="g-menubar" viewBox="0 0 16 16">
+      <path d="M3.76 12.24 A6 6 0 1 1 12.24 12.24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="8" cy="8" r="1.4" fill="currentColor"/>
+    </symbol>
+    <!-- toolbar tab icons -->
+    <symbol id="g-gear" viewBox="0 0 16 16">
+      <g fill="currentColor">
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7"/><rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(45 8 8)"/>
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(90 8 8)"/><rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(135 8 8)"/>
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(180 8 8)"/><rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(225 8 8)"/>
+        <rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(270 8 8)"/><rect x="7" y="0.6" width="2" height="3.2" rx="0.7" transform="rotate(315 8 8)"/>
+      </g>
+      <circle cx="8" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="2.3"/>
+    </symbol>
+    <symbol id="g-providers" viewBox="0 0 16 16"><!-- point.3.connected.trianglepath.dotted -->
+      <path d="M8 3.2 L13.2 12.4 M8 3.2 L2.8 12.4 M2.8 12.4 H13.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="1.6 1.8" stroke-linecap="round"/>
+      <circle cx="8" cy="3" r="2" fill="currentColor"/><circle cx="2.8" cy="12.6" r="2" fill="currentColor"/><circle cx="13.2" cy="12.6" r="2" fill="currentColor"/>
+    </symbol>
+    <symbol id="g-menubarrect" viewBox="0 0 16 16"><!-- menubar.rectangle -->
+      <rect x="1.5" y="2.5" width="13" height="11" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <rect x="1.5" y="2.5" width="13" height="3.4" rx="1.6" fill="currentColor"/>
+    </symbol>
+    <symbol id="g-info" viewBox="0 0 16 16"><!-- info.circle -->
+      <circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <rect x="7.2" y="6.8" width="1.6" height="5" rx="0.8" fill="currentColor"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/>
+    </symbol>
+    <!-- controls / status -->
+    <symbol id="g-check-circle" viewBox="0 0 16 16"><!-- checkmark.circle.fill -->
+      <circle cx="8" cy="8" r="7" fill="currentColor"/>
+      <path d="M4.8 8.2 L7.1 10.5 L11.4 5.8" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="g-updown" viewBox="0 0 16 16"><!-- chevron.up.chevron.down (pop-up indicator) -->
+      <path d="M5 6.4 L8 3.4 L11 6.4 M5 9.6 L8 12.6 L11 9.6" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="g-handle" viewBox="0 0 16 16"><!-- line.3.horizontal -->
+      <path d="M2.5 4.5 H13.5 M2.5 8 H13.5 M2.5 11.5 H13.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="g-lock" viewBox="0 0 16 16"><!-- lock.fill -->
+      <rect x="3" y="7" width="10" height="7.5" rx="1.8" fill="currentColor"/>
+      <path d="M5.2 7 V5.2 A2.8 2.8 0 0 1 10.8 5.2 V7" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    </symbol>
+    <symbol id="g-doc-gear" viewBox="0 0 16 16"><!-- doc.badge.gearshape -->
+      <path d="M3.5 1.5 H9 L12.5 5 V14.5 H3.5 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M9 1.5 V5 H12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      <circle cx="12.6" cy="12.4" r="3.1" fill="currentColor"/><circle cx="12.6" cy="12.4" r="1" fill="#fff"/>
+    </symbol>
+    <symbol id="g-clock" viewBox="0 0 16 16"><!-- clock -->
+      <circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M8 4.5 V8 H10.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="g-help" viewBox="0 0 16 16"><!-- HelpLink -->
+      <circle cx="8" cy="8" r="7" fill="#fff" stroke="rgba(0,0,0,0.18)" stroke-width="0.8"/>
+      <path d="M5.9 6.3 A2.1 2.1 0 1 1 8.9 8.2 C8.2 8.6 8 9 8 9.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="8" cy="12" r="0.9" fill="currentColor"/>
+    </symbol>
+    <symbol id="g-wifi" viewBox="0 0 16 16">
+      <path d="M1.5 6.2 A9.2 9.2 0 0 1 14.5 6.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M4.2 9.2 A5.4 5.4 0 0 1 11.8 9.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <circle cx="8" cy="12.6" r="1.6" fill="currentColor"/>
+    </symbol>
+    <symbol id="g-cc" viewBox="0 0 16 16">
+      <rect x="1" y="2.5" width="14" height="4.6" rx="2.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="4.5" cy="4.8" r="1.4" fill="currentColor"/>
+      <rect x="1" y="8.9" width="14" height="4.6" rx="2.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="11.5" cy="11.2" r="1.4" fill="currentColor"/>
+    </symbol>
+
+    <!-- Reusable control chrome -->
+    <g id="switch-on"><rect class="switchOn" x="0" y="0" width="26" height="15" rx="7.5"/><circle class="knob" cx="18.5" cy="7.5" r="6"/></g>
+    <g id="switch-off"><rect class="switchOff" x="0" y="0" width="26" height="15" rx="7.5"/><circle class="knob" cx="7.5" cy="7.5" r="6"/></g>
+    <g id="popup-indicator"><rect class="accent" x="0" y="0" width="16" height="16" rx="4"/><use xlink:href="#g-updown" x="0" y="0" width="16" height="16"/></g>
+    <g id="traffic-lights"><circle cx="20" cy="15" r="6" fill="#FF5F57"/><circle cx="40" cy="15" r="6" fill="#FEBC2E"/><circle cx="60" cy="15" r="6" fill="#28C840"/></g>
+  </defs>
+
+  <rect class="canvas" x="0" y="0" width="1900" height="880"/>
+
+  <!-- ================================================================ -->
+  <!-- Window 1 — Providers tab                                          -->
+  <!-- ================================================================ -->
+  <text x="60" y="24" class="artTitle">1 · Settings › Providers — Codex, Claude adapter, OpenRouter management key</text>
+  <g id="providers-window" transform="translate(60,40)">
+    <rect class="win" x="0" y="0" width="560" height="816" rx="12"/>
+
+    <!-- Title bar + toolbar tabs -->
+    <g id="titlebar-1">
+      <use xlink:href="#traffic-lights"/>
+      <text x="280" y="19.5" text-anchor="middle" class="winTitle t1">Providers</text>
+      <g transform="translate(140,34)">
+        <g class="t2"><use xlink:href="#g-gear" x="26" y="4" width="18" height="18"/><text x="35" y="38" text-anchor="middle" class="tab t2">General</text></g>
+        <g transform="translate(70,0)"><rect class="tabSel" x="0" y="0" width="70" height="44" rx="8"/><use xlink:href="#g-providers" x="26" y="4" width="18" height="18" class="accent"/><text x="35" y="38" text-anchor="middle" class="tab accentText">Providers</text></g>
+        <g transform="translate(140,0)" class="t2"><use xlink:href="#g-menubarrect" x="26" y="4" width="18" height="18"/><text x="35" y="38" text-anchor="middle" class="tab t2">Menu Bar</text></g>
+        <g transform="translate(210,0)" class="t2"><use xlink:href="#g-info" x="26" y="4" width="18" height="18"/><text x="35" y="38" text-anchor="middle" class="tab t2">About</text></g>
+      </g>
+    </g>
+
+    <!-- Section: Codex -->
+    <g id="section-codex">
+      <rect class="codexTile" x="20" y="96" width="24" height="24" rx="6"/>
+      <use xlink:href="#g-codex" x="25" y="101" width="14" height="14" class="oai"/>
+      <text x="52" y="113" class="h t1">Codex</text>
+      <text x="52" y="131" class="sub t2">Reads the remaining subscription usage that the locally installed, signed-in Codex CLI reports</text>
+      <text x="52" y="146" class="sub t2">through its App Server. UsageTool never asks for an OpenAI account or API key.</text>
+      <rect class="group" x="20" y="156" width="520" height="120" rx="10"/>
+      <text x="36" y="175" class="body t1">Show Codex</text>
+      <use xlink:href="#switch-on" x="498" y="163.5"/>
+      <line class="rowSep" x1="36" y1="186.5" x2="524" y2="186.5"/>
+      <text x="36" y="205" class="body t1">Status</text>
+      <use xlink:href="#g-check-circle" x="180" y="194" width="14" height="14" class="green"/>
+      <text x="200" y="205" class="body t1">Connected<tspan class="t2"> · Codex 0.9.4 · updated 2m ago</tspan></text>
+      <line class="rowSep" x1="36" y1="216.5" x2="524" y2="216.5"/>
+      <text x="36" y="235" class="body t1">Windows</text>
+      <text x="180" y="235" class="body t1">5-hour 73%<tspan class="t2">  ·  </tspan>7-day 58%</text>
+      <line class="rowSep" x1="36" y1="246.5" x2="524" y2="246.5"/>
+      <rect class="btnFill" x="416" y="252" width="108" height="20" rx="5"/>
+      <text x="470" y="266" text-anchor="middle" class="btn t1">Test Connection</text>
+    </g>
+
+    <!-- Section: Claude (status-line adapter, managed snapshot; no credentials, no file chooser) -->
+    <g id="section-claude">
+      <rect class="claudeTile" x="20" y="296" width="24" height="24" rx="6"/>
+      <use xlink:href="#g-claude" x="25" y="301" width="14" height="14"/>
+      <text x="52" y="313" class="h t1">Claude</text>
+      <text x="52" y="331" class="sub t2">A small adapter runs as Claude Code’s status line, keeps only the rate-limit fields, and writes</text>
+      <text x="52" y="346" class="sub t2">them to a snapshot file that UsageTool reads. No Claude sign-in or credentials are used.</text>
+      <rect class="group" x="20" y="356" width="520" height="180" rx="10"/>
+      <text x="36" y="375" class="body t1">Show Claude</text>
+      <use xlink:href="#switch-on" x="498" y="363.5"/>
+      <line class="rowSep" x1="36" y1="386.5" x2="524" y2="386.5"/>
+      <text x="36" y="405" class="body t1">Adapter</text>
+      <use xlink:href="#g-check-circle" x="180" y="394" width="14" height="14" class="green"/>
+      <text x="200" y="405" class="body t1">Installed<tspan class="t2"> · composes with your existing status line</tspan></text>
+      <line class="rowSep" x1="36" y1="416.5" x2="524" y2="416.5"/>
+      <text x="36" y="435" class="body t1">Snapshot</text>
+      <use xlink:href="#g-doc-gear" x="180" y="424" width="14" height="14" class="t2"/>
+      <text x="200" y="435" class="mono t1">…/UsageTool/claude-usage.json</text>
+      <rect class="btnFill" x="464" y="422" width="60" height="20" rx="5"/>
+      <text x="494" y="436" text-anchor="middle" class="btn t1">Reveal</text>
+      <line class="rowSep" x1="36" y1="446.5" x2="524" y2="446.5"/>
+      <text x="36" y="465" class="body t1">Status</text>
+      <use xlink:href="#g-check-circle" x="180" y="454" width="14" height="14" class="green"/>
+      <text x="200" y="465" class="body t1">Last reported by Claude Code<tspan class="t2"> · 4m ago</tspan></text>
+      <line class="rowSep" x1="36" y1="476.5" x2="524" y2="476.5"/>
+      <text x="36" y="495" class="body t1">Windows</text>
+      <text x="180" y="495" class="body t1">5-hour 42%<tspan class="t2">  ·  </tspan>7-day 18%</text>
+      <line class="rowSep" x1="36" y1="506.5" x2="524" y2="506.5"/>
+      <rect class="btnFill" x="396" y="512" width="128" height="20" rx="5"/>
+      <text x="460" y="526" text-anchor="middle" class="btn t1">Configure Adapter…</text>
+      <text x="36" y="552" class="sub t2">Updates only while a Claude Code session is running.</text>
+    </g>
+
+    <!-- Section: OpenRouter (management key; credits only) -->
+    <g id="section-openrouter">
+      <rect class="routerTile" x="20" y="572" width="24" height="24" rx="6"/>
+      <use xlink:href="#g-router" x="25" y="577" width="14" height="14" class="router"/>
+      <text x="52" y="589" class="h t1">OpenRouter</text>
+      <text x="52" y="607" class="sub t2">Shows remaining USD account credits from OpenRouter’s credits API. Reading credits requires a</text>
+      <text x="52" y="622" class="sub t2">management key. UsageTool explains what that key can do before you add one.</text>
+      <rect class="group" x="20" y="632" width="520" height="120" rx="10"/>
+      <text x="36" y="651" class="body t1">Show OpenRouter</text>
+      <use xlink:href="#switch-on" x="498" y="639.5"/>
+      <line class="rowSep" x1="36" y1="662.5" x2="524" y2="662.5"/>
+      <text x="36" y="681" class="body t1">Management key</text>
+      <rect class="field" x="180" y="668" width="264" height="20" rx="5"/>
+      <text x="188" y="682" class="mono t2">••••••••••••••••••••••••4f2a</text>
+      <rect class="btnFill" x="454" y="668" width="70" height="20" rx="5"/>
+      <text x="489" y="682" text-anchor="middle" class="btn t1">Replace…</text>
+      <line class="rowSep" x1="36" y1="692.5" x2="524" y2="692.5"/>
+      <text x="36" y="711" class="body t1">Status</text>
+      <use xlink:href="#g-check-circle" x="180" y="700" width="14" height="14" class="green"/>
+      <text x="200" y="711" class="body t1">Connected<tspan class="t2"> · management key · expires Oct 19, 2026</tspan></text>
+      <line class="rowSep" x1="36" y1="722.5" x2="524" y2="722.5"/>
+      <rect class="btnFill" x="416" y="728" width="108" height="20" rx="5"/>
+      <text x="470" y="742" text-anchor="middle" class="btn t1">Test Connection</text>
+      <use xlink:href="#g-lock" x="36" y="761" width="11" height="11" class="t2"/>
+      <text x="52" y="770" class="sub t2">Stored in the macOS Keychain and sent only to openrouter.ai.</text>
+      <text x="52" y="785" class="sub t2">This key can manage your OpenRouter API keys. Revoke it any time at</text>
+      <text x="52" y="800" class="sub accentText">openrouter.ai › Settings › Keys</text>
+    </g>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- Window 2 — Menu Bar tab                                            -->
+  <!-- ================================================================ -->
+  <text x="680" y="24" class="artTitle">2 · Settings › Menu Bar — live preview, main item, separate text items, warnings</text>
+  <g id="menubar-window" transform="translate(680,40)">
+    <rect class="win" x="0" y="0" width="560" height="600" rx="12"/>
+
+    <g id="titlebar-2">
+      <use xlink:href="#traffic-lights"/>
+      <text x="280" y="19.5" text-anchor="middle" class="winTitle t1">Menu Bar</text>
+      <g transform="translate(140,34)">
+        <g class="t2"><use xlink:href="#g-gear" x="26" y="4" width="18" height="18"/><text x="35" y="38" text-anchor="middle" class="tab t2">General</text></g>
+        <g transform="translate(70,0)" class="t2"><use xlink:href="#g-providers" x="26" y="4" width="18" height="18"/><text x="35" y="38" text-anchor="middle" class="tab t2">Providers</text></g>
+        <g transform="translate(140,0)"><rect class="tabSel" x="0" y="0" width="70" height="44" rx="8"/><use xlink:href="#g-menubarrect" x="26" y="4" width="18" height="18" class="accent"/><text x="35" y="38" text-anchor="middle" class="tab accentText">Menu Bar</text></g>
+        <g transform="translate(210,0)" class="t2"><use xlink:href="#g-info" x="26" y="4" width="18" height="18"/><text x="35" y="38" text-anchor="middle" class="tab t2">About</text></g>
+      </g>
+    </g>
+
+    <!-- Preview strip (renders the real MenuBarExtra label views) -->
+    <g id="preview">
+      <text x="20" y="110" class="h t1">Preview</text>
+      <rect class="strip" x="20" y="120" width="520" height="28" rx="8"/>
+      <text x="34" y="139" class="menubar t3">⋯</text>
+      <use xlink:href="#g-menubar" x="262" y="126" width="16" height="16" class="t1"/>
+      <text x="290" y="139" class="menubar t1">Codex 73%</text>
+      <text x="368" y="139" class="menubar t1">$18.20</text>
+      <use xlink:href="#g-wifi" x="432" y="126" width="16" height="16" class="t3"/>
+      <use xlink:href="#g-cc" x="456" y="126" width="16" height="16" class="t3"/>
+      <text x="482" y="139" class="menubar t3">10:55 AM</text>
+    </g>
+
+    <!-- Main item -->
+    <g id="main-item">
+      <text x="20" y="178" class="h t1">Main item</text>
+      <rect class="group" x="20" y="188" width="520" height="90" rx="10"/>
+      <text x="36" y="207" class="body t1">Show icon</text>
+      <use xlink:href="#switch-on" x="498" y="195.5"/>
+      <line class="rowSep" x1="36" y1="218.5" x2="524" y2="218.5"/>
+      <text x="36" y="237" class="body t1">Icon style</text>
+      <rect class="segBg" x="324" y="224" width="200" height="20" rx="6"/>
+      <rect class="segSel" x="326" y="226" width="96" height="16" rx="5"/>
+      <text x="374" y="238" text-anchor="middle" class="ctl t1">Icon only</text>
+      <text x="474" y="238" text-anchor="middle" class="ctl t1">Icon and summary</text>
+      <line class="rowSep" x1="36" y1="248.5" x2="524" y2="248.5"/>
+      <text x="36" y="267" class="body t3">Summary</text>
+      <rect class="btnDisabled" x="384" y="254" width="140" height="20" rx="5"/>
+      <text x="392" y="268" class="ctl t3">73% · 42% · $18</text>
+      <rect class="switchOff" x="506" y="256" width="16" height="16" rx="4" opacity="0.5"/>
+      <use xlink:href="#g-updown" x="506" y="256" width="16" height="16"/>
+    </g>
+
+    <!-- Separate items -->
+    <g id="separate-items">
+      <text x="20" y="308" class="h t1">Separate items</text>
+      <text x="20" y="324" class="sub t2">Show a text item for each provider. Each opens the same usage view beneath itself. Drag to reorder.</text>
+      <rect class="group" x="20" y="334" width="520" height="108" rx="10"/>
+      <use xlink:href="#g-handle" x="34" y="345" width="14" height="14" class="t3"/>
+      <rect class="codexTile" x="56" y="342" width="20" height="20" rx="5"/><use xlink:href="#g-codex" x="60" y="346" width="12" height="12" class="oai"/>
+      <text x="84" y="356" class="body t1">Codex</text>
+      <rect class="btnFill" x="220" y="342" width="132" height="20" rx="5"/><text x="228" y="356" class="ctl t1">Name and value</text><use xlink:href="#popup-indicator" x="334" y="344"/>
+      <text x="480" y="356" text-anchor="end" class="menubar t2">Codex 73%</text>
+      <use xlink:href="#switch-on" x="498" y="344.5"/>
+      <line class="rowSep" x1="56" y1="370.5" x2="524" y2="370.5"/>
+      <use xlink:href="#g-handle" x="34" y="381" width="14" height="14" class="t3"/>
+      <rect class="claudeTile" x="56" y="378" width="20" height="20" rx="5"/><use xlink:href="#g-claude" x="60" y="382" width="12" height="12"/>
+      <text x="84" y="392" class="body t1">Claude</text>
+      <rect class="btnFill" x="220" y="378" width="132" height="20" rx="5"/><text x="228" y="392" class="ctl t1">Name and value</text><use xlink:href="#popup-indicator" x="334" y="380"/>
+      <text x="480" y="392" text-anchor="end" class="menubar t3">Claude 42%</text>
+      <use xlink:href="#switch-off" x="498" y="380.5"/>
+      <line class="rowSep" x1="56" y1="406.5" x2="524" y2="406.5"/>
+      <use xlink:href="#g-handle" x="34" y="417" width="14" height="14" class="t3"/>
+      <rect class="routerTile" x="56" y="414" width="20" height="20" rx="5"/><use xlink:href="#g-router" x="60" y="418" width="12" height="12" class="router"/>
+      <text x="84" y="428" class="body t1">OpenRouter</text>
+      <rect class="btnFill" x="220" y="414" width="132" height="20" rx="5"/><text x="228" y="428" class="ctl t1">Value only</text><use xlink:href="#popup-indicator" x="334" y="416"/>
+      <text x="480" y="428" text-anchor="end" class="menubar t2">$18.20</text>
+      <use xlink:href="#switch-on" x="498" y="416.5"/>
+    </g>
+
+    <!-- Warnings -->
+    <g id="warnings">
+      <text x="20" y="472" class="h t1">Warnings</text>
+      <rect class="group" x="20" y="482" width="520" height="90" rx="10"/>
+      <text x="36" y="501" class="body t1">Show a warning symbol below 10%</text>
+      <use xlink:href="#switch-on" x="498" y="489.5"/>
+      <line class="rowSep" x1="36" y1="512.5" x2="524" y2="512.5"/>
+      <text x="36" y="531" class="body t1">Use color for warnings</text>
+      <use xlink:href="#switch-off" x="498" y="519.5"/>
+      <line class="rowSep" x1="36" y1="542.5" x2="524" y2="542.5"/>
+      <text x="36" y="561" class="body t1">Hide items while unavailable</text>
+      <text x="380" y="561" text-anchor="end" class="sub t2">Off shows “Codex —”</text>
+      <use xlink:href="#switch-off" x="498" y="549.5"/>
+    </g>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- Column 3 — Setup sheets                                            -->
+  <!-- ================================================================ -->
+  <text x="1300" y="24" class="artTitle">3 · Sheets — management-key disclosure (§7.7) and Configure Adapter (§7.5)</text>
+
+  <!-- Sheet A: About OpenRouter management keys (480 × 300) -->
+  <g id="sheet-management-key" transform="translate(1300,40)">
+    <rect class="sheet" x="0" y="0" width="480" height="300" rx="12"/>
+    <text x="24" y="38" class="sheetTitle t1">About OpenRouter management keys</text>
+    <text x="24" y="68" class="p t1">OpenRouter’s credits endpoint (/api/v1/credits) only accepts a management</text>
+    <text x="24" y="84" class="p t1">key. OpenRouter doesn’t document a narrower, balance-only scope, so</text>
+    <text x="24" y="100" class="p t1">UsageTool can’t ask for less.</text>
+    <text x="24" y="124" class="p t1">A management key can create, edit and revoke your account’s API keys,</text>
+    <text x="24" y="140" class="p t1">although it can’t make completion requests. UsageTool uses it for exactly</text>
+    <text x="24" y="156" class="p t1">one thing: reading your credit balance.</text>
+    <text x="24" y="180" class="p t1">Create the key with an expiry date. UsageTool stores it in the macOS</text>
+    <text x="24" y="196" class="p t1">Keychain, sends it only to openrouter.ai, and will remind you a week before</text>
+    <text x="24" y="212" class="p t1">it expires. Revoke it any time at <tspan class="accentText">openrouter.ai › Settings › Keys</tspan>.</text>
+    <text x="24" y="270" class="btn accentText">Open OpenRouter Keys…</text>
+    <rect class="btnFill" x="314" y="254" width="66" height="22" rx="6"/>
+    <text x="347" y="269" text-anchor="middle" class="btn t1">Cancel</text>
+    <rect class="btnProminent" x="388" y="254" width="68" height="22" rx="6"/>
+    <text x="422" y="269" text-anchor="middle" class="btn white">Continue</text>
+  </g>
+
+  <!-- Sheet B: Set up the Claude Code status-line adapter (520 × 460) -->
+  <g id="sheet-adapter" transform="translate(1300,380)">
+    <rect class="sheet" x="0" y="0" width="520" height="460" rx="12"/>
+    <text x="24" y="38" class="sheetTitle t1">Set up the Claude Code status-line adapter</text>
+    <text x="24" y="62" class="sub t2">Claude Code runs a statusLine command and passes it status JSON on stdin. UsageTool’s</text>
+    <text x="24" y="76" class="sub t2">adapter keeps only the 5-hour and 7-day rate-limit windows (remaining, reset time)</text>
+    <text x="24" y="90" class="sub t2">and writes them to a snapshot file. Nothing else is stored, and no credentials are used.</text>
+
+    <!-- Detected state -->
+    <rect class="group" x="24" y="104" width="472" height="30" rx="8"/>
+    <text x="36" y="123" class="body t1">Detected</text>
+    <text x="120" y="123" class="body t1">Existing status line<tspan class="t2"> · </tspan><tspan class="monoSm t1">~/.config/statusline.sh</tspan><tspan class="t2"> · chained</tspan></text>
+
+    <!-- Guided | Manual -->
+    <rect class="segBg" x="160" y="146" width="200" height="20" rx="6"/>
+    <rect class="segSel" x="162" y="148" width="96" height="16" rx="5"/>
+    <text x="210" y="160" text-anchor="middle" class="ctl t1">Guided</text>
+    <text x="310" y="160" text-anchor="middle" class="ctl t1">Manual</text>
+
+    <!-- Guided panel -->
+    <rect class="group" x="24" y="180" width="472" height="70" rx="8"/>
+    <text x="36" y="201" class="sub t1">Installs the adapter helper, backs up ~/.claude/settings.json, and merges only the</text>
+    <text x="36" y="216" class="sub t1">statusLine key. Your existing command keeps running inside --chain.</text>
+    <rect class="btnProminent" x="376" y="222" width="108" height="20" rx="5"/>
+    <text x="430" y="236" text-anchor="middle" class="btn white">Install Adapter</text>
+
+    <!-- Snapshot behavior footnotes -->
+    <use xlink:href="#g-doc-gear" x="24" y="268" width="12" height="12" class="t2"/>
+    <text x="42" y="278" class="sub t2">Snapshot: ~/Library/Application Support/UsageTool/claude-usage.json — managed by</text>
+    <text x="42" y="293" class="sub t2">the adapter and written atomically. There is nothing to choose.</text>
+    <use xlink:href="#g-clock" x="24" y="308" width="12" height="12" class="t2"/>
+    <text x="42" y="318" class="sub t2">Data appears only after Claude Code’s first API response in a session and updates</text>
+    <text x="42" y="333" class="sub t2">only while a session is running. Between sessions the last report ages into Stale.</text>
+    <use xlink:href="#g-lock" x="24" y="348" width="12" height="12" class="t2"/>
+    <text x="42" y="358" class="sub t2">The adapter never reads or writes Claude credentials and never stores session IDs,</text>
+    <text x="42" y="373" class="sub t2">working directories, transcript paths, cost or context data.</text>
+
+    <!-- Buttons -->
+    <use xlink:href="#g-help" x="24" y="414" width="22" height="22" class="t2"/>
+    <rect class="btnDisabled" x="296" y="414" width="112" height="22" rx="6"/>
+    <text x="352" y="429" text-anchor="middle" class="btn t3">Remove Adapter</text>
+    <rect class="btnProminent" x="428" y="414" width="68" height="22" rx="6"/>
+    <text x="462" y="429" text-anchor="middle" class="btn white">Done</text>
+  </g>
+</svg>
