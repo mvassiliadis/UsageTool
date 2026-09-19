@@ -1,30 +1,40 @@
 # Manual menu-bar verification
 
-`MenuBarExtra` scenes cannot be driven by XCTest/Swift Testing: the status item lives in the
-system menu bar, not in a window the test host owns. `Tests/UsageToolTests/MenuBarSceneTests.swift`
-pins the invariant that caused the regression below (binding write-backs must not mutate
-preferences); the checks in this file cover the parts that only a real launch can show.
+The status items live in the system menu bar, not in a window the test host owns, so they cannot
+be driven by XCTest/Swift Testing. `Tests/UsageToolTests/MenuBarSceneTests.swift` pins the
+preference rules the items are built from; the checks in this file cover the parts that only a
+real launch can show.
+
+## How the items are built
+
+`MenuBarItemsController` owns one `NSStatusItem` per visible item and opens `PopoverView` in a
+transparent `MenuBarPanel`, centred under the item that was clicked, with the caret from
+`PopoverChromeShape` pointing back at it. The app declares no `MenuBarExtra` scenes — only
+`Settings`.
 
 ## The defect this guards against
 
-`MenuBarExtra(isInserted:)` observes its controller's visibility with KVO and pushes the binding's
-current value back on **every** scene-graph update, not only when the user adds or removes the item.
-The insertion-binding setters used to mutate `@Observable` preferences unconditionally, so each
-write-back invalidated the scene graph, which produced another write-back. The app spun forever in
-`AppGraph.graphDidChange()` → `AppMenuBarExtrasController.updateMenuBarExtras` → the binding setter,
-pinned at 100% main-thread CPU. The scene update never completed, so **no status item was ever
-installed and no menu-bar click was ever delivered** — the symptom was a blank, dead menu-bar slot
-in an otherwise healthy, still-running `LSUIElement` process.
+The app previously declared four `MenuBarExtra` scenes. `MenuBarExtra(isInserted:)` observes its
+controller's visibility with KVO and pushes the binding's current value back on **every**
+scene-graph update, not only when the user adds or removes the item. The insertion-binding setters
+mutated `@Observable` preferences unconditionally, so each write-back invalidated the scene graph,
+which produced another write-back. The app spun forever in `AppGraph.graphDidChange()` →
+`AppMenuBarExtrasController.updateMenuBarExtras` → the binding setter, pinned at 100% main-thread
+CPU. The scene update never completed, so **no status item was ever installed and no menu-bar click
+was ever delivered** — the symptom was a blank, dead menu-bar slot in an otherwise healthy, still
+running `LSUIElement` process.
 
-Any future change that mutates observable state from a scene-level binding getter/setter can
-reintroduce it. The cheapest detection is step 2 below: a healthy idle UsageTool uses ~0% CPU.
+Visibility is now only ever *read*, by `MenuBarItemsController.sync()` under
+`withObservationTracking`, so that exact cycle can no longer form. A change that writes preferences
+back from inside `sync()` would recreate it. The cheapest detection is step 2 below: a healthy idle
+UsageTool uses ~0% CPU.
 
-`PopoverView` sizing is part of the same story: `MenuBarExtra(.window)` takes its window height
-from the root view's *definite* height and collapses a height-flexible root to its minimum. A root
-`.frame(minHeight:)` therefore pinned the popover at 160 pt and clipped the onboarding state's
-action button. Both branches are now sized to their own content — and `fixedSize` is deliberately
-**not** used on the provider list, because it sizes the scroll view to its content and then clips
-it, leaving rows unreachable.
+`PopoverView` sizing is part of the same story. The panel takes its height from the hosting
+controller's `preferredContentSize`, which comes from the root view's *definite* height; a root
+`.frame(minHeight:)` collapses it to that minimum and clips anything taller, which is how the
+onboarding state's action button was once cut off. Both branches are sized to their own content —
+and `fixedSize` is deliberately **not** used on the provider list, because it sizes the scroll view
+to its content and then clips it, leaving rows unreachable.
 
 ## Procedure
 
@@ -47,7 +57,10 @@ open -a /tmp/UsageToolDerivedData/Build/Products/Debug/UsageTool.app
 | 1 | Menu bar after launch | The `usage.gauge` template icon is drawn, tinted for the current menu-bar appearance. |
 | 2 | `ps -o %cpu= -p $(pgrep -x UsageTool)` after ~5s idle | ~0.0. A pegged core means the scene-graph live-lock is back. |
 | 3 | `sample $(pgrep -x UsageTool) 2` | The main thread is parked in `mach_msg_trap` under `-[NSApplication run]`, **not** in `AppGraph.graphDidChange()`. |
-| 4 | Click the icon | The popover appears below the item, 340 pt wide, with the Usage header, refresh button and gear. |
+| 4 | Click the icon | The popover appears below the item, 340 pt wide, with the Usage header, refresh button and gear. It is **centred on the icon** and its caret points at the icon; the icon shows the pressed highlight while it is open. |
+| 4a | Click the icon again, then click elsewhere on the desktop while it is open, then press Escape while it is open | Each dismisses the popover exactly once — clicking the icon of an open popover closes it and does not immediately reopen it. |
+| 4b | Drag the item to the far right of the menu bar (⌘-drag) and open it | The panel stops 8 pt from the screen edge and the caret shifts off-centre to keep pointing at the icon, instead of the panel hanging off the screen. |
+| 4c | Expand a provider disclosure inside the popover | The panel grows downward; its top edge and caret stay put against the menu bar. |
 | 5 | Click the gear | The Settings window opens **in front** and UsageTool becomes frontmost. |
 | 5a | With Settings open, activate another app (so Settings is buried), then click the icon and the gear again | Settings comes back **in front**. `onAppear` fires only on the first open, so this is the case that regresses if a call site stops going through `openSettingsWindow`. |
 | 5b | Repeat 5a with **Xcode** frontmost | Settings still comes to the front. Xcode does not yield to `NSApp.activate()` — cooperative activation lets the frontmost app keep the spot — so this case depends on `orderFrontRegardless()` and regresses if only the activation call is left. |

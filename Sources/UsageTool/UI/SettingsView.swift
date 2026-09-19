@@ -11,6 +11,12 @@ import SwiftUI
 @MainActor
 func openSettingsWindow(_ openSettings: OpenSettingsAction) {
     openSettings()
+    // The popover is hosted by an AppKit panel rather than a SwiftUI scene, so the environment
+    // action reaches no scene from there and does nothing. The app-level action does; asking for
+    // it a second time when the window is already up is harmless, it just orders it front.
+    if settingsWindow() == nil {
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+    }
     bringSettingsWindowForward()
     // SwiftUI may only create the window, or order it front, on the next turn of the run loop.
     Task { @MainActor in bringSettingsWindowForward() }

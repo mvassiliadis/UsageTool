@@ -17,11 +17,12 @@ enum DesignTokens {
         static let preview: CGFloat = 8
     }
 
-    /// `MenuBarExtra(.window)` sizes its window from the root view's *definite* height, and
-    /// falls back to the minimum whenever that root is height-flexible. A root
-    /// `.frame(minHeight:)` therefore pinned the popover to that minimum and clipped anything
-    /// taller, so `PopoverView` keeps both of its branches definite instead: each is sized to its
-    /// own content, and the provider list is capped at `maxContentHeight`.
+    /// `MenuBarPanel` sizes itself from its hosting controller's `preferredContentSize`, which
+    /// comes from the root view's *definite* height and falls back to the minimum whenever that
+    /// root is height-flexible. A root `.frame(minHeight:)` therefore pins the popover to that
+    /// minimum and clips anything taller, so `PopoverView` keeps both of its branches definite
+    /// instead: each is sized to its own content, and the provider list is capped at
+    /// `maxContentHeight`.
     enum Popover {
         static let width: CGFloat = 340
 

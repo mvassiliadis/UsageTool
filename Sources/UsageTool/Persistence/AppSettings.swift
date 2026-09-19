@@ -94,8 +94,8 @@ final class AppSettings {
 
     var preferences: AppPreferences {
         didSet {
-            // SwiftUI writes `MenuBarExtra(isInserted:)` bindings back on every scene
-            // update. Persisting an unchanged value is pure overhead, so skip it.
+            // Settings controls and menu-bar normalization both assign the whole struct, often
+            // with nothing changed. Persisting an unchanged value is pure overhead, so skip it.
             guard preferences != oldValue else { return }
             persist()
         }

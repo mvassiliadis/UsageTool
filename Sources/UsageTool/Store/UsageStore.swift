@@ -2,7 +2,6 @@ import AppKit
 import Foundation
 import Network
 import Observation
-import SwiftUI
 
 @MainActor
 @Observable
@@ -238,43 +237,7 @@ final class UsageStore {
         return warningPrefix + core + staleSuffix
     }
 
-    // MARK: - Menu-bar scene bindings
-    //
-    // `MenuBarExtra(isInserted:)` watches its controller's visibility with KVO and pushes the
-    // current value back through the binding on *every* scene-graph update, not only when the
-    // user adds or removes the item. Mutating `@Observable` preferences from that write-back
-    // re-dirties the graph, which produces another write-back, and the app spins forever in
-    // `AppGraph.graphDidChange()`: the status items are never installed and no menu-bar click is
-    // ever delivered. Both setters below must therefore be strict no-ops for an unchanged value.
-
-    /// Insertion binding for the combined menu-bar item.
-    func mainMenuItemBinding() -> Binding<Bool> {
-        Binding(get: { [settings] in
-            settings.preferences.mainItemVisible
-        }, set: { [settings] newValue in
-            guard settings.preferences.mainItemVisible != newValue else { return }
-            settings.preferences.mainItemVisible = newValue
-            settings.normalizeMenuVisibility()
-        })
-    }
-
-    /// Insertion binding for a provider's optional standalone menu-bar item.
-    func separateMenuItemBinding(_ provider: ProviderID) -> Binding<Bool> {
-        Binding(get: { [weak self] in
-            self?.shouldShowSeparateMenuItem(provider) ?? false
-        }, set: { [weak self] newValue in
-            guard let self else { return }
-            guard shouldShowSeparateMenuItem(provider) != newValue else { return }
-            // While unavailable items are hidden, the item disappearing must not clear the
-            // user's stored preference for it.
-            if settings.preferences.hideUnavailableItems,
-               settings.preferences.separateItems[provider] == true,
-               !newValue { return }
-            guard settings.preferences.separateItems[provider] != newValue else { return }
-            settings.preferences.separateItems[provider] = newValue
-            settings.normalizeMenuVisibility()
-        })
-    }
+    // MARK: - Menu-bar item visibility
 
     func shouldShowSeparateMenuItem(_ provider: ProviderID) -> Bool {
         guard settings.preferences.showProvider[provider] ?? true,

@@ -4,13 +4,18 @@ import SwiftUI
 @MainActor
 final class UsageToolApplicationDelegate: NSObject, NSApplicationDelegate {
     weak var store: UsageStore?
+    /// Nil in the local-validation variant and under XCTest, neither of which installs menu-bar
+    /// items. See `MenuBarItemsController` for why the app owns these instead of `MenuBarExtra`.
+    var menuBarItems: MenuBarItemsController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
         store?.start()
+        menuBarItems?.start()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        menuBarItems?.stop()
         store?.stopSynchronouslyForTermination()
     }
 
@@ -19,7 +24,6 @@ final class UsageToolApplicationDelegate: NSObject, NSApplicationDelegate {
 @main
 struct UsageToolApp: App {
     @NSApplicationDelegateAdaptor(UsageToolApplicationDelegate.self) private var appDelegate
-    @State private var settings: AppSettings
     @State private var store: UsageStore
 
     init() {
@@ -72,7 +76,6 @@ struct UsageToolApp: App {
             service = OpenRouterService(client: OpenRouterClient(), secretStore: KeychainStore())
         }
 #endif
-        _settings = State(initialValue: settings)
         let store = UsageStore(
             settings: settings,
             openRouter: service,
@@ -88,6 +91,8 @@ struct UsageToolApp: App {
 #endif
         _store = State(initialValue: store)
         appDelegate.store = store
+        // Neither the test host nor the local-validation variant may touch the real menu bar.
+        if !isolatedRuntime { appDelegate.menuBarItems = MenuBarItemsController(store: store) }
     }
 
 #if USAGETOOL_LOCAL_VALIDATION_BUILD
@@ -115,39 +120,21 @@ struct UsageToolApp: App {
                 .frame(width: DesignTokens.Settings.width)
                 .frame(minHeight: DesignTokens.Settings.minHeight)
         } else {
-            PopoverView()
-                .frame(width: DesignTokens.Popover.width)
-                .frame(minHeight: 520)
+            // Wrapped exactly as the menu-bar panel wraps it, so the preview shows the real
+            // caret and panel outline; the caret is centred because there is no item to aim at.
+            PopoverChromeContainer(caretX: DesignTokens.Popover.width / 2) {
+                PopoverView()
+                    .frame(width: DesignTokens.Popover.width)
+                    .frame(minHeight: 520)
+            }
+            .padding(DesignTokens.Space.x16)
         }
     }
 #else
+    // The menu-bar items are not scenes: they are `NSStatusItem`s driven by
+    // `MenuBarItemsController`, so the popover can be a transparent panel with a caret that
+    // points at the item that opened it. Settings stays a scene.
     var body: some Scene {
-        MenuBarExtra(isInserted: mainItemBinding) {
-            PopoverView().environment(store)
-        } label: {
-            HStack(spacing: 4) {
-                Image("usage.gauge")
-                if settings.preferences.mainItemStyle == .iconAndSummary { Text(store.summaryLabel).monospacedDigit() }
-            }
-            .help("UsageTool · \(store.summaryLabel)")
-        }
-        .menuBarExtraStyle(.window)
-
-        MenuBarExtra(isInserted: separateBinding(.codex)) {
-            PopoverView(focus: .codex).environment(store)
-        } label: { menuBarText(.codex) }
-        .menuBarExtraStyle(.window)
-
-        MenuBarExtra(isInserted: separateBinding(.claude)) {
-            PopoverView(focus: .claude).environment(store)
-        } label: { menuBarText(.claude) }
-        .menuBarExtraStyle(.window)
-
-        MenuBarExtra(isInserted: separateBinding(.openRouter)) {
-            PopoverView(focus: .openRouter).environment(store)
-        } label: { menuBarText(.openRouter) }
-        .menuBarExtraStyle(.window)
-
         Settings {
             SettingsView()
                 .environment(store)
@@ -158,21 +145,4 @@ struct UsageToolApp: App {
         .windowResizability(.contentSize)
     }
 #endif
-
-    private var mainItemBinding: Binding<Bool> { store.mainMenuItemBinding() }
-
-    private func separateBinding(_ provider: ProviderID) -> Binding<Bool> {
-        store.separateMenuItemBinding(provider)
-    }
-
-    private func menuBarText(_ provider: ProviderID) -> some View {
-        Text(store.menuBarLabel(for: provider))
-            .monospacedDigit()
-            .foregroundStyle(settings.preferences.useWarningColor && store.isCritical(provider) ? Color.red : Color.primary)
-            .help(menuHelp(provider))
-    }
-
-    private func menuHelp(_ provider: ProviderID) -> String {
-        "\(provider.displayName) · \(store.menuBarValue(for: provider)) · \(store.states[provider]?.snapshot.map { "Updated \(UsageFormatters.relativeAge(since: $0.effectiveDate, now: Date()))" } ?? "Unavailable")"
-    }
 }

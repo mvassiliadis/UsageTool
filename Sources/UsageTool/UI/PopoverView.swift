@@ -3,9 +3,9 @@ import SwiftUI
 
 struct PopoverView: View {
     let focus: ProviderID?
-    /// Measured height of the provider list. `MenuBarExtra(.window)` sizes its window from the
-    /// root view's definite height and collapses a height-flexible root to its minimum, so the
-    /// list is given a concrete height instead of being left to fill whatever it is offered.
+    /// Measured height of the provider list. `MenuBarPanel` sizes itself from the root view's
+    /// definite height and collapses a height-flexible root to its minimum, so the list is given
+    /// a concrete height instead of being left to fill whatever it is offered.
     @State private var listHeight = DesignTokens.Popover.maxContentHeight
     @Environment(UsageStore.self) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

@@ -142,7 +142,7 @@ Thresholds are constants (`Thresholds.low = 0.25`, `Thresholds.critical = 0.10`,
 
 ### 2.5 Materials
 
-- **Popover panel:** provided by `MenuBarExtra` `.window` style; the system applies the Liquid Glass popover material, shape, and shadow. Do **not** set a custom background, `glassEffect`, or `ultraThinMaterial` inside. Content sits directly on the panel.
+- **Popover panel:** drawn by `PopoverChromeContainer` — `PopoverChromeShape` (rounded rect, corner radius 16, with a 26×9 caret on top pointing at the menu-bar item) filled with `.regularMaterial` and stroked at 12 % `primary`. The panel window is transparent and casts the shadow from that silhouette. Do **not** set a further background, `glassEffect`, or `ultraThinMaterial` inside. Content sits directly on the panel.
 - **Inside the panel:** no additional material layers. Grouping uses inset `Divider`s only.
 - **Settings window:** standard window with `.formStyle(.grouped)`; grouped form backgrounds are system-provided.
 - **Menu-bar preview strip (Settings › Menu Bar):** a 28 pt tall rounded rect using `Color(nsColor: .windowBackgroundColor)` with a 1 pt separator border; it *illustrates* the menu bar, it is not glass.
@@ -233,17 +233,17 @@ Tooltips (`.help`) on every item: `Codex · 73% of 5-hour window remaining · Re
 - Canvas 18×18, template, single-color, weights: Regular, Medium (menu bar uses Medium).
 - Geometry: an open ring gauge, 270° arc (gap at bottom, centered), stroke 1.6 pt, round caps, outer diameter 14 pt centered; a 2.6 pt filled dot at the ring center. The arc is *static* (decorative) — the icon does not encode live values; live values are the text items.
 - Provide `Usage.symbolset` in the asset catalog (Symbol Components / SF Symbols app export). Until then use `gauge.with.dots.needle.67percent`.
-- Interaction: clicking opens the popover; the icon shows the system “pressed” highlight (automatic with `MenuBarExtra`).
+- Interaction: clicking opens the popover; the icon shows the system “pressed” highlight (`NSStatusBarButton.highlight(true)` while the panel is open).
 
 ### 3.3 Behavior
 
 - Left click any item → open popover content beneath **that** item. Click again or press Esc → close. Clicking outside closes.
-- **Separate items are separate `MenuBarExtra` scenes.** Each optional text item is its own `MenuBarExtra(isInserted:)` scene with `.menuBarExtraStyle(.window)`. Each scene presents its **own** window instance of the same `PopoverView`, bound to the same shared observable store, so the content and state are equivalent wherever it is opened. Do not assume SwiftUI guarantees a single physical popover shared across scenes. Requirements:
-  - Opening one item’s window dismisses any other UsageTool item window (track “presented” state in the store and dismiss via the scene’s presentation binding).
+- **Separate items are separate `NSStatusItem`s.** `MenuBarItemsController` owns one per visible item; each opens its **own** `MenuBarPanel` hosting the same `PopoverView` over the same shared observable store, so the content and state are equivalent wherever it is opened. Requirements:
+  - Opening one item’s panel dismisses any other UsageTool panel (the open panel is key, and loses key status to the new one, which dismisses it).
   - Expand/collapse state per provider lives in the store, so it is the same regardless of which item opened the content.
   - The window presented from a provider’s text item is **focused to that provider**: accessibility focus moves to its block and the block flashes 6 % accent for 600 ms (no motion under Reduce Motion).
 - Order of separate items follows Settings › Menu Bar list order (drag to reorder). macOS may reposition items; the app does not fight the system.
-- *Secondary:* if a secondary-click context menu becomes a requirement, implement the main item with `NSStatusItem` + `NSPopover`; keep the SwiftUI popover content unchanged.
+- *Secondary:* if a secondary-click context menu becomes a requirement, attach an `NSMenu` to the status item for right-click only; keep the SwiftUI popover content unchanged.
 
 ---
 
@@ -251,7 +251,7 @@ Tooltips (`.help`) on every item: `Codex · 73% of 5-hour window remaining · Re
 
 ### 4.1 Frame
 
-- `MenuBarExtra("Usage", image: "usage.gauge") { PopoverView() }.menuBarExtraStyle(.window)`
+- `PopoverView` in an `NSHostingController` inside `MenuBarPanel`, centred on the item that opened it (clamped to 8 pt from the screen edge, with the caret following the item), 4 pt below the menu bar.
 - Width **340** fixed. Height = intrinsic, clamped to `popover.maxHeight` 560; beyond that the provider list scrolls (header and footer pinned, `scrollEdgeEffectStyle(.soft)` on both edges).
 - Insets: 16 horizontal, 12 top, 10 bottom.
 - The popover is not resizable and has no title bar.
@@ -874,10 +874,10 @@ Settings: standard form navigation; `⌘1–4` switch tabs; `Esc` closes sheets.
 
 | Design element | Implementation |
 |---|---|
-| App entry | `@main App` with `MenuBarExtra` scenes + `Settings` scene; `LSUIElement = YES` |
-| Main menu-bar item | `MenuBarExtra { PopoverView() } label: { Image("usage.gauge") [+ Text(summary)] }.menuBarExtraStyle(.window)` |
-| Separate text items | one `MenuBarExtra(isInserted: $prefs.showCodexItem) { PopoverView(focus: .codex) } label: { Text("Codex 73%").monospacedDigit() }` per provider. Each scene presents its own window of the same view over the shared store (§3.3); the store dismisses any other open UsageTool window when one opens. |
-| Shared state | one `@Observable` `UsageStore` injected via `.environment(store)` into every scene: snapshots, provider states, expanded flags, presented-item flag |
+| App entry | `@main App` with a `Settings` scene only; the menu-bar items are `NSStatusItem`s owned by `MenuBarItemsController`; `LSUIElement = YES` |
+| Main menu-bar item | `NSStatusItem` whose button carries the `usage.gauge` template image [+ the summary title] and opens `MenuBarPanel` |
+| Separate text items | one `NSStatusItem` per provider, installed while `shouldShowSeparateMenuItem` is true, titled e.g. `Codex 73%` in the menu-bar font with monospaced digits. Each opens its own panel of the same view over the shared store (§3.3); opening one dismisses any other open panel. |
+| Shared state | one `@Observable` `UsageStore` injected via `.environment(store)` into every panel and the Settings scene: snapshots, provider states, expanded flags, presented-item flag |
 | Popover layout | `VStack` → header `HStack`, `ScrollView` (only when needed) of `ProviderBlockView`s separated by `Divider().padding(.horizontal, 16)`, footer `HStack` |
 | Header buttons | `Button` `.buttonStyle(.borderless)` (refresh, and settings via `openSettingsWindow`) |
 | Provider tile | `ZStack { RoundedRectangle(cornerRadius: 6).fill(accent.opacity(…)); Image("Provider/ClaudeSpark").renderingMode(.original).resizable().aspectRatio(contentMode: .fit).frame(width: 14, height: 14) }` — assets from `Design/Assets/ProviderIcons` imported into the asset catalog as vector (“Preserve Vector Data”), never `Image(systemName:)` for provider identity |

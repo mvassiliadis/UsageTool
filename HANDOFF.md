@@ -91,19 +91,28 @@ Implemented for account credits only:
 
 ## Important runtime fixes
 
-### Menu-bar scene live-lock
+### Menu-bar items are `NSStatusItem`s, not `MenuBarExtra` scenes
+
+The popover is centred under the item that opened it and carries a caret pointing back at it. `MenuBarExtra(.window)` draws its own opaque chrome and exposes neither the status item's position nor its window's frame, so the app now owns the items directly:
+
+- `MenuBarItemsController` installs one `NSStatusItem` per visible item and keeps their titles, images and visibility in step with preferences and provider state through `withObservationTracking`. Visibility is only ever read.
+- `MenuBarStatusItem` opens `PopoverView` in a transparent `MenuBarPanel` (`.borderless`, `.nonactivatingPanel`), centred on the item, clamped 8 pt from the screen edge, 4 pt below the menu bar. It dismisses on outside click (loss of key status), Escape, and a second click on the item.
+- `PopoverChromeShape` / `PopoverChromeContainer` draw the panel's whole silhouette — rounded rect plus caret — which is also what the window's shadow is derived from. The local-validation preview wraps `PopoverView` in the same container.
+- The app declares only the `Settings` scene, so `openSettings()` has no scene to act on from the panel; `openSettingsWindow` falls back to `NSApp.sendAction(showSettingsWindow:)`.
+
+### Menu-bar scene live-lock (historical)
 
 The first real app launch produced a blank/dead menu-bar slot. Root cause: `MenuBarExtra(isInserted:)` writes its value back during scene updates, while the original binding setters unconditionally mutated `@Observable` preferences and normalization rewrote them. That created an `AppGraph.graphDidChange()` feedback loop before status-item installation.
 
 Fixes:
 
-- Menu-bar insertion setters are strict no-ops when the value is unchanged.
+- The insertion bindings are gone with the scenes; `MenuBarItemsController` reads visibility and never writes it back, so the cycle cannot form.
 - Preference normalization and persistence are idempotent.
 - Settings explicitly activates the accessory app and raises its window on **every** open (`openSettingsWindow`, used by the gear, `Open Settings…` and the provider `Set up…` buttons) so it comes in front even when it is already open behind another app. The `orderFrontRegardless()` there is load-bearing: cooperative activation lets the frontmost app refuse `NSApp.activate()`, and Xcode does.
 - Regression coverage lives in `Tests/UsageToolTests/MenuBarSceneTests.swift`.
 - Manual checks and the invariant are documented in `Documentation/Manual-Verification.md`.
 
-Do not introduce observable mutations from scene-level binding getters/setters without preserving this invariant. A healthy idle app uses approximately 0% CPU.
+Do not introduce observable mutations from inside `MenuBarItemsController.sync()`, or from a scene-level binding getter/setter, without preserving this invariant. A healthy idle app uses approximately 0% CPU.
 
 ### Claude adapter installer queue crash
 
@@ -121,7 +130,7 @@ A stale `claude-adapter-install.json.sb-*` file from an interrupted Foundation a
 
 ### Safe local preview
 
-A compile-time-only validation variant provides deterministic popover/settings windows with in-memory settings/secrets and disabled providers. It intentionally uses a normal `WindowGroup`; it does not exercise `MenuBarExtra`. See:
+A compile-time-only validation variant provides deterministic popover/settings windows with in-memory settings/secrets and disabled providers. It intentionally uses a normal `WindowGroup` and installs no status items, so it shows the popover chrome but not its menu-bar placement. See:
 
 - `Documentation/Local-Validation.md`
 - `Documentation/Local-Validation-Report.md`

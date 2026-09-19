@@ -49,7 +49,7 @@ Scenarios are `populated`, `errors`, and `empty`. Set `USAGETOOL_VALIDATION_WIND
 - Network/power monitors, initial refresh, cadence refresh, and the Claude snapshot watcher are disabled.
 - The Claude adapter sheet receives a dedicated `home` directory beneath the temporary validation support root, never ambient `HOME` or `FileManager.homeDirectoryForCurrentUser`. Install/remove controls are disabled in the preview.
 - OpenRouter key entry/add/save controls are disabled in the preview, in addition to the store-level provider-operation guard.
-- The compile-time validation scene contains no `MenuBarExtra`; its separate bundle identifier and `LSUIElement=NO` make it a normal focusable test window without changing menu-bar placement preferences.
+- The compile-time validation scene installs no status items; its separate bundle identifier and `LSUIElement=NO` make it a normal focusable test window without changing menu-bar placement preferences. It wraps `PopoverView` in the same `PopoverChromeContainer` the menu-bar panel uses, so the caret and panel outline are visible, with the caret centred because there is no item to aim at.
 
 Local smoke validation covered populated, partial, stale, unavailable, expired, and empty states; provider disclosures; all four settings tabs; the Claude setup sheet; keyboard task switching; light and dark rendering; accessibility names/values/help; process cleanup; and the absence of sockets, provider children, or real configuration paths in open-file inspection.
 

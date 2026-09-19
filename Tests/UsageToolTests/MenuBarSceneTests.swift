@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import UsageTool
 
-/// Counts writes so a test can assert that a no-op binding write-back never reaches persistence.
+/// Counts writes so a test can assert that an unchanged preference never reaches persistence.
 private final class CountingPreferencesStore: AppPreferencesPersistence {
     private var values: [String: Data] = [:]
     private(set) var writeCount = 0
@@ -15,23 +15,12 @@ private final class CountingPreferencesStore: AppPreferencesPersistence {
     }
 }
 
-/// `withObservationTracking(_:onChange:)` hands its callback a `@Sendable` closure, so the flag it
-/// sets needs a reference box.
-private final class ChangeFlag: @unchecked Sendable {
-    var didChange = false
-}
-
-/// Regression coverage for the menu-bar scene live-lock.
+/// Coverage for the preference rules behind the menu-bar items.
 ///
-/// `MenuBarExtra(isInserted:)` pushes the binding's current value back on every scene-graph
-/// update. When those setters mutated `@Observable` preferences unconditionally, each write-back
-/// invalidated the graph and produced another write-back, so the app never finished a scene update
-/// — the status item was never installed and clicks were never delivered. The invariant that keeps
-/// the graph settling is: writing the value the getter already reports must not mutate anything.
-///
-/// MenuBarExtra itself cannot be driven from an automated test, so these tests pin the invariant at
-/// the binding and preference layer. Manual verification of the real status item is documented in
-/// `Documentation/Manual-Verification.md`.
+/// The items are `NSStatusItem`s owned by `MenuBarItemsController`, which reads visibility from
+/// these preferences and never writes back to them. The status bar itself cannot be driven from an
+/// automated test, so these tests pin the rules the controller reads. Manual verification of the
+/// real items and popover is documented in `Documentation/Manual-Verification.md`.
 @MainActor
 struct MenuBarSceneTests {
     private func makeStore(
@@ -56,79 +45,38 @@ struct MenuBarSceneTests {
         return (store, settings, persistence)
     }
 
-    @Test func mainItemWriteBackOfCurrentValueDoesNotMutateOrPersist() {
-        let (store, settings, persistence) = makeStore()
-        let binding = store.mainMenuItemBinding()
-        let before = settings.preferences
-        let writesBefore = persistence.writeCount
-
-        for _ in 0 ..< 10 { binding.wrappedValue = binding.wrappedValue }
-
-        #expect(settings.preferences == before)
-        #expect(persistence.writeCount == writesBefore)
-    }
-
-    @Test func separateItemWriteBackOfCurrentValueDoesNotMutateOrPersist() {
-        let (store, settings, persistence) = makeStore()
-        let before = settings.preferences
-        let writesBefore = persistence.writeCount
-
-        for provider in ProviderID.allCases {
-            let binding = store.separateMenuItemBinding(provider)
-            for _ in 0 ..< 10 { binding.wrappedValue = binding.wrappedValue }
-        }
-
-        #expect(settings.preferences == before)
-        #expect(persistence.writeCount == writesBefore)
-    }
-
-    /// The precise property that stops the scene graph from re-dirtying itself.
-    @Test func writeBackOfCurrentValueEmitsNoObservationChange() {
-        let (store, settings, _) = makeStore()
-        let bindings = [store.mainMenuItemBinding()] + ProviderID.allCases.map { store.separateMenuItemBinding($0) }
-
-        for binding in bindings {
-            let flag = ChangeFlag()
-            withObservationTracking {
-                _ = settings.preferences
-            } onChange: {
-                flag.didChange = true
-            }
-            binding.wrappedValue = binding.wrappedValue
-            #expect(flag.didChange == false)
-        }
-    }
-
-    @Test func realVisibilityChangesStillApply() {
+    @Test func visibilityChangesApplyAndPersist() {
         let (store, settings, persistence) = makeStore { $0.separateItems[.codex] = true }
         let writesBefore = persistence.writeCount
 
-        store.mainMenuItemBinding().wrappedValue = false
+        settings.preferences.mainItemVisible = false
+        settings.normalizeMenuVisibility()
         #expect(settings.preferences.mainItemVisible == false)
 
-        store.separateMenuItemBinding(.claude).wrappedValue = true
+        settings.preferences.separateItems[.claude] = true
+        settings.normalizeMenuVisibility()
         #expect(settings.preferences.separateItems[.claude] == true)
-        #expect(store.separateMenuItemBinding(.claude).wrappedValue == true)
+        #expect(store.shouldShowSeparateMenuItem(.claude) == true)
         #expect(persistence.writeCount > writesBefore)
     }
 
     /// Hiding the last item would leave the app unreachable, so normalization restores the main one.
     @Test func hidingEveryItemRestoresTheMainItem() {
-        let (store, settings, _) = makeStore()
-        store.mainMenuItemBinding().wrappedValue = false
+        let (_, settings, _) = makeStore()
+        settings.preferences.mainItemVisible = false
+        settings.normalizeMenuVisibility()
         #expect(settings.preferences.mainItemVisible == true)
     }
 
-    /// An item hidden by `hideUnavailableItems` must not silently clear the user's preference.
+    /// An item hidden by `hideUnavailableItems` is only hidden: the stored preference stands, so
+    /// the item comes back by itself once the provider reports again.
     @Test func autoHiddenSeparateItemKeepsStoredPreference() {
         let (store, settings, _) = makeStore {
             $0.hideUnavailableItems = true
             $0.separateItems[.codex] = true
         }
+
         #expect(store.shouldShowSeparateMenuItem(.codex) == false)
-
-        store.separateMenuItemBinding(.codex).wrappedValue = false
-
         #expect(settings.preferences.separateItems[.codex] == true)
     }
 
