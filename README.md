@@ -65,7 +65,7 @@ The compile-time local-validation variant has a separate bundle identifier, a no
 
 ## Release checks
 
-- Build and run with the intended Developer ID signing identity; verify data-protection Keychain add/read/delete and specifically rule out `errSecMissingEntitlement` (`-34018`).
+- Build and run with the intended Developer ID signing identity; verify data-protection Keychain add/read/delete and confirm the legacy-Keychain fallback is *not* engaged (it triggers on `errSecMissingEntitlement`, `-34018`). A signed build needs an `application-identifier` or `keychain-access-groups` entitlement for the data-protection Keychain.
 - Notarize and verify the embedded `Contents/Helpers/usagetool-statusline` signature and Hardened Runtime.
 - Complete the sanctioned live compatibility probes listed as Research Q1, Q2, Q4, and Q5. Do not add fallback links until they are independently verified.
 

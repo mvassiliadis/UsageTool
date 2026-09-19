@@ -249,4 +249,8 @@ actor OpenRouterService {
     func hasCredential() async -> Bool {
         (try? await secretStore.contains()) == true
     }
+
+    func secretBacking() async -> SecretStoreBacking? {
+        await secretStore.backing()
+    }
 }

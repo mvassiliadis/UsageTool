@@ -28,6 +28,8 @@ final class UsageStore {
     let claudeSnapshotURL: URL
     let claudeHomeURL: URL
     let providerOperationsEnabled: Bool
+    /// Which store the OpenRouter key actually landed in; `nil` until a Keychain call has run.
+    private(set) var openRouterSecretBacking: SecretStoreBacking?
 
     @ObservationIgnored private let openRouter: OpenRouterService
     @ObservationIgnored private let codexLocator: CodexExecutableLocator
@@ -91,7 +93,9 @@ final class UsageStore {
         guard initialRefreshEnabled else { return }
         Task { [weak self] in
             guard let self else { return }
-            if await self.openRouter.hasCredential() { await self.refresh(.openRouter) }
+            let hasCredential = await self.openRouter.hasCredential()
+            await self.updateOpenRouterSecretBacking()
+            if hasCredential { await self.refresh(.openRouter) }
             await self.refresh(.codex)
         }
     }
@@ -155,8 +159,10 @@ final class UsageStore {
         do {
             let snapshot = try await openRouter.connect(key: key)
             accept(snapshot)
+            await updateOpenRouterSecretBacking()
         } catch {
             applyOpenRouterError(error)
+            await updateOpenRouterSecretBacking()
             throw error
         }
     }
@@ -165,6 +171,7 @@ final class UsageStore {
         guard providerOperationsEnabled else { throw LocalValidationOperationError.disabled }
         try await openRouter.disconnect()
         states[.openRouter] = .disconnected
+        await updateOpenRouterSecretBacking()
     }
 
     func popoverOpened(focusedOn provider: ProviderID?) {
@@ -342,9 +349,15 @@ final class UsageStore {
         }
     }
 
+    private func updateOpenRouterSecretBacking() async {
+        openRouterSecretBacking = await openRouter.secretBacking()
+    }
+
     private func refreshOpenRouter(manual: Bool) async {
         let previous = states[.openRouter]?.snapshot
-        guard await openRouter.hasCredential() else {
+        let hasCredential = await openRouter.hasCredential()
+        await updateOpenRouterSecretBacking()
+        guard hasCredential else {
             states[.openRouter] = .disconnected
             return
         }

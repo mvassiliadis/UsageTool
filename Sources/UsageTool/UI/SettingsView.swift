@@ -161,6 +161,9 @@ private struct ProviderSettingsView: View {
                 }
                 if let inlineError { Text(inlineError).font(.subheadline).foregroundStyle(.red) }
                 LabeledContent("Status") { statusLabel(.openRouter) }
+                if let backing = store.openRouterSecretBacking {
+                    LabeledContent("Stored in") { secretBackingLabel(backing) }
+                }
                 HStack {
                     if store.snapshot(for: .openRouter) != nil {
                         Button("Disconnect", role: .destructive) { Task { try? await store.disconnectOpenRouter() } }
@@ -216,6 +219,16 @@ private struct ProviderSettingsView: View {
                 .lineLimit(1)
                 .truncationMode(.head)
         }
+    }
+
+    /// Which store the key landed in. Worth a line: an unsigned build quietly gets
+    /// the legacy Keychain, and that is the difference between a device-only secret
+    /// and a file-based one.
+    private func secretBackingLabel(_ backing: SecretStoreBacking) -> some View {
+        Label(backing.label, systemImage: backing == .dataProtection ? "lock.fill" : "lock.open.fill")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .labelStyle(.titleAndIcon)
     }
 
     private func caption(_ text: String, monospaced: Bool = false) -> some View {

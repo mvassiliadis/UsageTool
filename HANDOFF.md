@@ -74,7 +74,7 @@ Implemented for account credits only:
 
 - `/api/v1/key` validates management-key status and expiry.
 - `/api/v1/credits` reads cumulative credited/used amounts; remaining USD is their difference.
-- Management key stored through Security.framework Keychain with data-protection Keychain enabled.
+- Management key stored through Security.framework Keychain, preferring the data-protection Keychain and falling back to the legacy file-based Keychain when the process lacks the required entitlement (`errSecMissingEntitlement`, `-34018`). Ad-hoc signed local builds always take the fallback path. Settings › Providers › OpenRouter shows a small “Stored in” row naming the store actually in use.
 - Expiring, expired, auth, retry/backoff, `Retry-After`, coalescing, and stop-on-401/403 behavior implemented.
 - URL transport is mocked in tests; no live key or provider request is used during automated validation.
 - No ordinary-key mode, PKCE, percentages, key usage, or per-model spend.
