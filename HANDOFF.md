@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-19
 **Workspace:** `/Users/michaelvassiliadis/Development/experiments/UsageTool`
-**Current phase:** Native implementation and unsigned local validation are complete. Real-provider testing is in progress; signing/notarization is intentionally deferred.
+**Current phase:** Native implementation and unsigned local validation are complete. Real-provider testing is in progress; the Claude adapter installer crash found during hands-on testing is fixed. Signing/notarization is intentionally deferred.
 
 ## Resume first
 
@@ -65,7 +65,8 @@ Implemented through the user-enabled Claude Code `statusLine` adapter only:
 - Existing status-line commands are chained and preserved across install, reinstall, removal, and recovery from missing manifests.
 - Guided install backs up and merges only `statusLine`; unsupported configuration fails closed to manual instructions.
 - Automated tests use temporary homes and never modify the real `~/.claude/settings.json`.
-- Real Claude configuration mutation remains user-initiated only and has not been used for automated validation.
+- Real Claude configuration mutation remains user-initiated only and is never used by automated validation.
+- A user-initiated guided install has now been exercised against the real local Claude settings and the post-fix flow completes without crashing.
 
 ### OpenRouter
 
@@ -104,6 +105,20 @@ Fixes:
 
 Do not introduce observable mutations from scene-level binding getters/setters without preserving this invariant. A healthy idle app uses approximately 0% CPU.
 
+### Claude adapter installer queue crash
+
+The first real guided Claude adapter install committed `statusLine` and copied the helper, then trapped with a libdispatch main-queue assertion while the manifest atomic write notified the active snapshot watcher. The dispatch-source event handler had inherited `MainActor` isolation even though Dispatch executed it on a utility queue.
+
+Fixes:
+
+- The watcher uses an explicitly `@Sendable` dispatch handler and enters `MainActor` through a `Task` before touching watcher/UI state.
+- Guided install/reinstall stages the helper and rolls back helper, settings, manifest, and newly created backup when a later step fails.
+- A failed settings rollback retains the recovery backup and reports both the original error and backup path.
+- The setup sheet keeps state mutations on `MainActor` and prevents overlapping install/remove actions.
+- Regression coverage exercises an active watcher, manifest-write failure, reinstall rollback, failed settings restoration, stale atomic-write manifest artifacts, and transaction cleanup.
+
+A stale `claude-adapter-install.json.sb-*` file from an interrupted Foundation atomic write is not treated as a valid manifest. Abrupt process termination can still leave a staged helper artifact because the operation has no persistent journal, and adapter removal remains non-transactional; both are non-blocking residual risks.
+
 ### Safe local preview
 
 A compile-time-only validation variant provides deterministic popover/settings windows with in-memory settings/secrets and disabled providers. It intentionally uses a normal `WindowGroup`; it does not exercise `MenuBarExtra`. See:
@@ -117,11 +132,14 @@ Use the normal Debug app plus `Documentation/Manual-Verification.md` for real me
 
 - Debug and Release builds completed successfully under Xcode 27/macOS 27.
 - Swift strict-concurrency build is clean.
-- Final suite after Codex discovery/auth fixes: **70/70 tests pass**.
+- Final suite after the Claude installer fix: **74/74 tests pass**.
+- Focused Claude coverage passes **14/14 tests**.
+- The Hardened Runtime Debug build passes, and `git diff --check` is clean.
 - Earlier repeated checkpoint runs also completed without failures.
 - Deterministic coverage includes domain/state rules, Codex JSONL/process/discovery/auth, Claude sanitization/configuration, OpenRouter mocked transport/retry/auth, and menu-bar binding invariants.
-- Normal app manually verified: visible template icon, popover click, Settings gear, summary/separate items, idle CPU, and quit cleanup.
+- Normal app manually verified: visible template icon, popover click, Settings gear, summary/separate items, idle CPU, quit cleanup, and a successful user-initiated Claude guided install after the fix.
 - Safe preview manually inspected populated, error, empty, settings, light, and dark states.
+- Independent Claude Opus review accepted the installer fix and follow-up remediations with no remaining blocking, high, or medium findings.
 - No private service endpoints or provider credential-file access exist in production source.
 
 ## Known environment diagnostics
@@ -150,15 +168,16 @@ At the time of this update:
 
 - Workspace/tab: `wJ` / `wJ:t1`.
 - Prior implementation/review agents completed and exited.
-- `codex-path-debug` (Claude Opus 5, high effort) completed the latest Codex discovery/runtime fix in pane `wJ:pA` and is idle if still present.
+- `claude-installer-fix` (Codex, GPT-5.6-sol, xhigh) completed the Claude crash fix in pane `wJ:pB` and is idle if still present.
+- `claude-install-review` (Claude Code, Opus 5, high effort) completed the independent read-only review in pane `wJ:pC` and is idle if still present.
 - No worker needs to be resumed unless further defects are found.
 
 ## Remaining work
 
 User-prioritized next steps:
 
-1. Continue hands-on testing of the normal Debug app with real local Codex data.
-2. Optionally configure the Claude adapter and OpenRouter management key through explicit user actions, then verify those real integrations.
+1. Continue hands-on testing of the normal Debug app with real local Codex and Claude snapshot data.
+2. Optionally configure an OpenRouter management key through explicit user action, then verify that real integration.
 3. Fix any UX/runtime defects found during hands-on testing and add regression coverage.
 4. Re-run the complete test suite and normal-app manual checklist before the next release-oriented checkpoint.
 

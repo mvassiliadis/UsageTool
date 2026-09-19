@@ -3,6 +3,50 @@ import Testing
 @testable import UsageTool
 
 struct ClaudeTests {
+    private struct InjectedManifestWriteError: Error, LocalizedError {
+        var errorDescription: String? { "Injected manifest write failure" }
+    }
+
+    private struct InjectedSettingsRestoreError: Error, LocalizedError {
+        var errorDescription: String? { "Injected settings restore failure" }
+    }
+
+    @MainActor
+    private final class SnapshotProbe {
+        var receivedSnapshot = false
+    }
+
+    private final class AtomicWriteFault: @unchecked Sendable {
+        private let lock = NSLock()
+        private let settingsURL: URL?
+        private let failSettingsRestore: Bool
+        private var manifestFailureInjected = false
+
+        init(settingsURL: URL? = nil, failSettingsRestore: Bool = false) {
+            self.settingsURL = settingsURL
+            self.failSettingsRestore = failSettingsRestore
+        }
+
+        func writer() -> ClaudeAdapterInstaller.AtomicWriter {
+            { [self] data, url in try write(data, to: url) }
+        }
+
+        private func write(_ data: Data, to url: URL) throws {
+            lock.lock()
+            let failManifest = url.lastPathComponent == "claude-adapter-install.json"
+                && !manifestFailureInjected
+            if failManifest { manifestFailureInjected = true }
+            let failSettings = failSettingsRestore
+                && manifestFailureInjected
+                && url == settingsURL
+            lock.unlock()
+
+            if failManifest { throw InjectedManifestWriteError() }
+            if failSettings { throw InjectedSettingsRestoreError() }
+            try data.write(to: url, options: .atomic)
+        }
+    }
+
     @Test func sanitizerDropsEverythingExceptFinalContract() throws {
         let input = Data(#"""
         {
@@ -108,9 +152,12 @@ struct ClaudeTests {
         let installer = ClaudeAdapterInstaller(homeURL: home, applicationSupportURL: support, bundledHelperURL: helper)
         try await installer.install()
         try FileManager.default.removeItem(at: support.appendingPathComponent("claude-adapter-install.json"))
+        let staleManifestURL = support.appendingPathComponent("claude-adapter-install.json.sb-stale")
+        try Data("stale atomic-write temporary file".utf8).write(to: staleManifestURL)
         try await installer.remove()
         let restored = try JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: settings))
         #expect(restored["statusLine"]?["command"]?.stringValue == "original-status")
+        #expect(FileManager.default.fileExists(atPath: staleManifestURL.path))
     }
 
     @Test func reinstallWithoutOriginalSettingsDoesNotBackUpOrRestoreOwnCommand() async throws {
@@ -167,6 +214,171 @@ struct ClaudeTests {
         let decoded = try JSONDecoder().decode(JSONValue.self, from: Data(snippet.utf8))
         #expect(decoded["statusLine"]?["refreshInterval"]?.doubleValue == 180)
         #expect(decoded["statusLine"]?["command"]?.stringValue?.contains("--chain-base64") == true)
+    }
+
+    @Test @MainActor func installingWhileSnapshotWatcherIsActiveDoesNotViolateQueueIsolation() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let home = root.appendingPathComponent("home")
+        let support = root.appendingPathComponent("support")
+        let helper = root.appendingPathComponent("helper")
+        try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+        try Data("#!/bin/sh\n".utf8).write(to: helper)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: helper.path)
+        let snapshotURL = support.appendingPathComponent("claude-usage.json")
+        let probe = SnapshotProbe()
+        let watcher = ClaudeSnapshotWatcher(url: snapshotURL) { _ in probe.receivedSnapshot = true }
+        watcher.start()
+        defer { watcher.stop() }
+        try await Task.sleep(for: .milliseconds(50))
+        let installer = ClaudeAdapterInstaller(
+            homeURL: home,
+            applicationSupportURL: support,
+            bundledHelperURL: helper
+        )
+
+        _ = try await installer.install()
+        let snapshot = ClaudeSanitizedSnapshot(
+            schema: 1,
+            reportedAt: Date(),
+            windows: [.init(id: "5h", remainingFraction: 0.5, resetsAt: nil)]
+        )
+        try ClaudeStatusLineCore.writeLastWriterWins(snapshot, to: snapshotURL)
+        let deadline = ContinuousClock.now + .seconds(2)
+        while !probe.receivedSnapshot, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(probe.receivedSnapshot)
+    }
+
+    @Test func manifestWriteFailureRollsBackSettingsHelperAndBackup() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let home = root.appendingPathComponent("home")
+        let support = root.appendingPathComponent("support")
+        let helper = root.appendingPathComponent("helper")
+        let settingsURL = home.appendingPathComponent(".claude/settings.json")
+        let originalSettings = Data(#"{"theme":"dark","statusLine":{"type":"command","command":"original-status"}}"#.utf8)
+        try FileManager.default.createDirectory(at: settingsURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try originalSettings.write(to: settingsURL)
+        try Data("#!/bin/sh\n".utf8).write(to: helper)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: helper.path)
+        let fault = AtomicWriteFault()
+        let installer = ClaudeAdapterInstaller(
+            homeURL: home,
+            applicationSupportURL: support,
+            bundledHelperURL: helper,
+            atomicWriter: fault.writer()
+        )
+
+        var receivedInjectedFailure = false
+        do {
+            _ = try await installer.install()
+        } catch is InjectedManifestWriteError {
+            receivedInjectedFailure = true
+        }
+
+        #expect(receivedInjectedFailure)
+        #expect(try Data(contentsOf: settingsURL) == originalSettings)
+        #expect(!FileManager.default.fileExists(atPath: support.appendingPathComponent("bin/usagetool-statusline").path))
+        #expect(!FileManager.default.fileExists(atPath: support.appendingPathComponent("claude-adapter-install.json").path))
+        let claudeFiles = try FileManager.default.contentsOfDirectory(atPath: settingsURL.deletingLastPathComponent().path)
+        #expect(!claudeFiles.contains(where: { $0.hasPrefix("settings.json.usagetool-backup-") }))
+        #expect(try Self.transactionArtifacts(in: support).isEmpty)
+    }
+
+    @Test func failedReinstallRestoresPreviousHelperSettingsAndManifest() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let home = root.appendingPathComponent("home")
+        let support = root.appendingPathComponent("support")
+        let originalHelper = root.appendingPathComponent("original-helper")
+        let replacementHelper = root.appendingPathComponent("replacement-helper")
+        let settingsURL = home.appendingPathComponent(".claude/settings.json")
+        try FileManager.default.createDirectory(at: settingsURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(#"{"statusLine":{"type":"command","command":"original-status"}}"#.utf8).write(to: settingsURL)
+        try Data("#!/bin/sh\n# original\n".utf8).write(to: originalHelper)
+        try Data("#!/bin/sh\n# replacement\n".utf8).write(to: replacementHelper)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: originalHelper.path)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: replacementHelper.path)
+        let installer = ClaudeAdapterInstaller(
+            homeURL: home,
+            applicationSupportURL: support,
+            bundledHelperURL: originalHelper
+        )
+        _ = try await installer.install()
+        let installedHelperURL = support.appendingPathComponent("bin/usagetool-statusline")
+        let manifestURL = support.appendingPathComponent("claude-adapter-install.json")
+        let installedSettings = try Data(contentsOf: settingsURL)
+        let installedHelper = try Data(contentsOf: installedHelperURL)
+        let installedManifest = try Data(contentsOf: manifestURL)
+        let fault = AtomicWriteFault()
+        let failingInstaller = ClaudeAdapterInstaller(
+            homeURL: home,
+            applicationSupportURL: support,
+            bundledHelperURL: replacementHelper,
+            atomicWriter: fault.writer()
+        )
+
+        var receivedInjectedFailure = false
+        do {
+            _ = try await failingInstaller.install(refreshInterval: 180)
+        } catch is InjectedManifestWriteError {
+            receivedInjectedFailure = true
+        }
+
+        #expect(receivedInjectedFailure)
+        #expect(try Data(contentsOf: settingsURL) == installedSettings)
+        #expect(try Data(contentsOf: installedHelperURL) == installedHelper)
+        #expect(try Data(contentsOf: manifestURL) == installedManifest)
+        #expect(try Self.transactionArtifacts(in: support).isEmpty)
+    }
+
+    @Test func failedSettingsRestoreRetainsBackupAndReportsRecoveryPath() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let home = root.appendingPathComponent("home")
+        let support = root.appendingPathComponent("support")
+        let helper = root.appendingPathComponent("helper")
+        let settingsURL = home.appendingPathComponent(".claude/settings.json")
+        let originalSettings = Data(#"{"statusLine":{"type":"command","command":"original-status"}}"#.utf8)
+        try FileManager.default.createDirectory(at: settingsURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try originalSettings.write(to: settingsURL)
+        try Data("#!/bin/sh\n".utf8).write(to: helper)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: helper.path)
+        let fault = AtomicWriteFault(settingsURL: settingsURL, failSettingsRestore: true)
+        let installer = ClaudeAdapterInstaller(
+            homeURL: home,
+            applicationSupportURL: support,
+            bundledHelperURL: helper,
+            atomicWriter: fault.writer()
+        )
+
+        var recoveryPath: String?
+        var originalError: String?
+        do {
+            _ = try await installer.install()
+        } catch let ClaudeAdapterInstallerError.rollbackFailed(error, backupPath) {
+            originalError = error
+            recoveryPath = backupPath
+        }
+
+        let backupPath = try #require(recoveryPath)
+        #expect(originalError == "Injected manifest write failure")
+        #expect(FileManager.default.fileExists(atPath: backupPath))
+        #expect(try Data(contentsOf: URL(fileURLWithPath: backupPath)) == originalSettings)
+        #expect(try Data(contentsOf: settingsURL) != originalSettings)
+        #expect(!FileManager.default.fileExists(atPath: support.appendingPathComponent("bin/usagetool-statusline").path))
+        #expect(try Self.transactionArtifacts(in: support).isEmpty)
+    }
+
+    private static func transactionArtifacts(in support: URL) throws -> [String] {
+        let bin = support.appendingPathComponent("bin")
+        guard FileManager.default.fileExists(atPath: bin.path) else { return [] }
+        return try FileManager.default.contentsOfDirectory(atPath: bin.path).filter {
+            $0.hasPrefix(".usagetool-statusline.stage-")
+                || $0.hasPrefix(".usagetool-statusline.rollback-")
+        }
     }
 
     @Test func bundledHelperComposesChainAndDrainsLargeOutputWithoutTimeout() throws {

@@ -341,6 +341,7 @@ private struct ClaudeAdapterSheet: View {
     @State private var manualSnippet = ""
     @State private var existingCommand: String?
     @State private var isInstalled = false
+    @State private var isWorking = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -358,9 +359,11 @@ private struct ClaudeAdapterSheet: View {
                     HStack {
                         Text("Installs the bundled helper, backs up settings.json, merges only statusLine, and preserves any existing command in a chain.")
                         Spacer()
-                        Button(isInstalled ? "Reinstall Adapter" : "Install Adapter") { Task { await install() } }
+                        Button(isInstalled ? "Reinstall Adapter" : "Install Adapter") {
+                            Task { @MainActor in await install() }
+                        }
                             .buttonStyle(.borderedProminent)
-                            .disabled(!store.providerOperationsEnabled)
+                            .disabled(!store.providerOperationsEnabled || isWorking)
                     }
                 }
             } else {
@@ -386,15 +389,18 @@ private struct ClaudeAdapterSheet: View {
             HStack {
                 HelpLink(destination: URL(string: "https://code.claude.com/docs/en/statusline")!)
                 Spacer()
-                Button("Remove Adapter", role: .destructive) { Task { await remove() } }
-                    .disabled(!store.providerOperationsEnabled)
+                Button("Remove Adapter", role: .destructive) {
+                    Task { @MainActor in await remove() }
+                }
+                    .disabled(!store.providerOperationsEnabled || isWorking)
                 Button("Done") { dismiss() }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
             }
         }
         .padding(24).frame(width: 520)
-        .task { await inspect() }
+        .task { @MainActor in await inspect() }
     }
 
+    @MainActor
     private func installer() -> ClaudeAdapterInstaller? {
         guard let helper = Bundle.main.url(forAuxiliaryExecutable: "usagetool-statusline")
                 ?? Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/usagetool-statusline") as URL? else { return nil }
@@ -405,6 +411,7 @@ private struct ClaudeAdapterSheet: View {
         )
     }
 
+    @MainActor
     private func inspect() async {
         guard let installer = installer() else { status = "Bundled helper unavailable"; return }
         let result = await installer.inspect()
@@ -429,7 +436,11 @@ private struct ClaudeAdapterSheet: View {
         manualSnippet = await installer.manualSnippet(existingCommand: existingCommand)
     }
 
+    @MainActor
     private func install() async {
+        guard !isWorking else { return }
+        isWorking = true
+        defer { isWorking = false }
         guard let installer = installer() else { return }
         do { _ = try await installer.install(); message = "Installed · Claude Code will report after its next API response"; await inspect() }
         catch ClaudeAdapterInstallerError.incompatibleStatusLine {
@@ -439,10 +450,18 @@ private struct ClaudeAdapterSheet: View {
         } catch { message = "Couldn’t install safely: \(error.localizedDescription)" }
     }
 
+    @MainActor
     private func remove() async {
+        guard !isWorking else { return }
+        isWorking = true
+        defer { isWorking = false }
         guard let installer = installer() else { return }
         do { try await installer.remove(); message = "Adapter removed; the previous status line was restored."; await inspect() }
-        catch { message = "Couldn’t remove safely because the configuration changed." }
+        catch ClaudeAdapterInstallerError.currentConfigurationChanged {
+            message = "Couldn’t remove safely because the configuration changed."
+        } catch {
+            message = "Couldn’t remove safely: \(error.localizedDescription)"
+        }
     }
 }
 

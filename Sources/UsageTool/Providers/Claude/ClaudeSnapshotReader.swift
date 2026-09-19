@@ -65,10 +65,12 @@ final class ClaudeSnapshotWatcher {
                 eventMask: [.write, .rename, .delete],
                 queue: .global(qos: .utility)
             )
-            source.setEventHandler { [weak self] in
-                Task { @MainActor [weak self] in self?.scheduleDebouncedLoad() }
+            source.setEventHandler { @Sendable [weak self] in
+                Task { @MainActor [weak self] in
+                    self?.scheduleDebouncedLoad()
+                }
             }
-            source.setCancelHandler { [descriptor] in close(descriptor) }
+            source.setCancelHandler { @Sendable [descriptor] in close(descriptor) }
             source.resume()
             self.source = source
         }

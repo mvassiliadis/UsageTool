@@ -21,30 +21,38 @@ enum ClaudeAdapterInstallerError: Error, Equatable, LocalizedError {
     case invalidSettings
     case incompatibleStatusLine
     case currentConfigurationChanged
+    case rollbackFailed(originalError: String, backupPath: String?)
 
     var errorDescription: String? {
         switch self {
-        case .helperMissing: "The bundled Claude adapter helper is missing"
-        case .invalidSettings: "Claude settings.json could not be parsed"
-        case .incompatibleStatusLine: "The existing status line must be configured manually"
-        case .currentConfigurationChanged: "Claude settings changed since the adapter was installed"
+        case .helperMissing: return "The bundled Claude adapter helper is missing"
+        case .invalidSettings: return "Claude settings.json could not be parsed"
+        case .incompatibleStatusLine: return "The existing status line must be configured manually"
+        case .currentConfigurationChanged: return "Claude settings changed since the adapter was installed"
+        case .rollbackFailed(let originalError, let backupPath):
+            let recovery = backupPath.map { " A settings backup remains at \($0)." } ?? ""
+            return "The adapter installation failed (\(originalError)) and its previous files could not be fully restored.\(recovery)"
         }
     }
 }
 
 actor ClaudeAdapterInstaller {
+    typealias AtomicWriter = @Sendable (Data, URL) throws -> Void
+
     let settingsURL: URL
     let installedHelperURL: URL
     let snapshotURL: URL
     private let bundledHelperURL: URL
     private let manifestURL: URL
     private let fileManager: FileManager
+    private let atomicWriter: AtomicWriter
 
     init(
         homeURL: URL,
         applicationSupportURL: URL,
         bundledHelperURL: URL,
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        atomicWriter: @escaping AtomicWriter = ClaudeAdapterInstaller.writeAtomically
     ) {
         settingsURL = homeURL.appendingPathComponent(".claude/settings.json")
         installedHelperURL = applicationSupportURL.appendingPathComponent("bin/usagetool-statusline")
@@ -52,6 +60,7 @@ actor ClaudeAdapterInstaller {
         manifestURL = applicationSupportURL.appendingPathComponent("claude-adapter-install.json")
         self.bundledHelperURL = bundledHelperURL
         self.fileManager = fileManager
+        self.atomicWriter = atomicWriter
     }
 
     func inspect() -> ClaudeAdapterStatus {
@@ -116,29 +125,84 @@ actor ClaudeAdapterInstaller {
             preservedBackupPath = existingManifest?.backupPath
         }
 
-        try fileManager.createDirectory(at: installedHelperURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        if fileManager.fileExists(atPath: installedHelperURL.path) { try fileManager.removeItem(at: installedHelperURL) }
-        try fileManager.copyItem(at: bundledHelperURL, to: installedHelperURL)
-        try fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: installedHelperURL.path)
-
-        let backupURL: URL?
-        if let preservedBackupPath { backupURL = URL(fileURLWithPath: preservedBackupPath) }
-        else if reinstallingOwnedCommand { backupURL = nil }
-        else { backupURL = try backupSettingsIfPresent() }
         let command = installedCommand(chaining: existingCommand)
         root["statusLine"] = .object([
             "type": .string("command"),
             "command": .string(command),
             "refreshInterval": .number(Double(refreshInterval)),
         ])
-        try writeSettings(root)
-        let manifest = ClaudeAdapterManifest(
-            previousStatusLine: preservedPrevious,
-            backupPath: backupURL?.path,
-            installedCommand: command
-        )
-        try writeJSON(manifest, to: manifestURL)
-        return .init(kind: .installed(chained: existingCommand != nil))
+
+        let originalSettingsData = try dataIfPresent(at: settingsURL)
+        let originalManifestData = try dataIfPresent(at: manifestURL)
+        let helperDirectory = installedHelperURL.deletingLastPathComponent()
+        let transactionID = UUID().uuidString
+        let stagedHelperURL = helperDirectory.appendingPathComponent(".usagetool-statusline.stage-\(transactionID)")
+        let previousHelperURL = helperDirectory.appendingPathComponent(".usagetool-statusline.rollback-\(transactionID)")
+        var createdBackupURL: URL?
+        var previousHelperMoved = false
+        var stagedHelperInstalled = false
+        var settingsWriteAttempted = false
+        var manifestWriteAttempted = false
+
+        do {
+            try fileManager.createDirectory(at: helperDirectory, withIntermediateDirectories: true)
+            try fileManager.copyItem(at: bundledHelperURL, to: stagedHelperURL)
+            try fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: stagedHelperURL.path)
+
+            let backupURL: URL?
+            if let preservedBackupPath {
+                backupURL = URL(fileURLWithPath: preservedBackupPath)
+            } else if reinstallingOwnedCommand {
+                backupURL = nil
+            } else {
+                createdBackupURL = try backupSettingsIfPresent()
+                backupURL = createdBackupURL
+            }
+
+            if fileManager.fileExists(atPath: installedHelperURL.path) {
+                try fileManager.moveItem(at: installedHelperURL, to: previousHelperURL)
+                previousHelperMoved = true
+            }
+            try fileManager.moveItem(at: stagedHelperURL, to: installedHelperURL)
+            stagedHelperInstalled = true
+
+            settingsWriteAttempted = true
+            try writeSettings(root)
+            let manifest = ClaudeAdapterManifest(
+                previousStatusLine: preservedPrevious,
+                backupPath: backupURL?.path,
+                installedCommand: command
+            )
+            manifestWriteAttempted = true
+            try writeJSON(manifest, to: manifestURL)
+
+            if fileManager.fileExists(atPath: previousHelperURL.path) {
+                try? fileManager.removeItem(at: previousHelperURL)
+            }
+            return .init(kind: .installed(chained: existingCommand != nil))
+        } catch {
+            let rolledBack = rollbackInstall(
+                originalSettingsData: originalSettingsData,
+                settingsWriteAttempted: settingsWriteAttempted,
+                originalManifestData: originalManifestData,
+                manifestWriteAttempted: manifestWriteAttempted,
+                stagedHelperURL: stagedHelperURL,
+                previousHelperURL: previousHelperURL,
+                previousHelperMoved: previousHelperMoved,
+                stagedHelperInstalled: stagedHelperInstalled,
+                createdBackupURL: createdBackupURL
+            )
+            guard rolledBack else {
+                let backupPath = [createdBackupURL?.path, preservedBackupPath]
+                    .compactMap { $0 }
+                    .first(where: fileManager.fileExists(atPath:))
+                throw ClaudeAdapterInstallerError.rollbackFailed(
+                    originalError: error.localizedDescription,
+                    backupPath: backupPath
+                )
+            }
+            throw error
+        }
     }
 
     func remove() throws {
@@ -282,6 +346,75 @@ actor ClaudeAdapterInstaller {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         let data = try encoder.encode(value)
         try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try atomicWriter(data, url)
+    }
+
+    private func dataIfPresent(at url: URL) throws -> Data? {
+        guard fileManager.fileExists(atPath: url.path) else { return nil }
+        return try Data(contentsOf: url)
+    }
+
+    private func rollbackInstall(
+        originalSettingsData: Data?,
+        settingsWriteAttempted: Bool,
+        originalManifestData: Data?,
+        manifestWriteAttempted: Bool,
+        stagedHelperURL: URL,
+        previousHelperURL: URL,
+        previousHelperMoved: Bool,
+        stagedHelperInstalled: Bool,
+        createdBackupURL: URL?
+    ) -> Bool {
+        var succeeded = true
+        var settingsRestored = true
+
+        if previousHelperMoved, fileManager.fileExists(atPath: previousHelperURL.path) {
+            if fileManager.fileExists(atPath: installedHelperURL.path) {
+                do { try fileManager.removeItem(at: installedHelperURL) }
+                catch { succeeded = false }
+            }
+            do { try fileManager.moveItem(at: previousHelperURL, to: installedHelperURL) }
+            catch { succeeded = false }
+        } else if stagedHelperInstalled, fileManager.fileExists(atPath: installedHelperURL.path) {
+            do { try fileManager.removeItem(at: installedHelperURL) }
+            catch { succeeded = false }
+        }
+
+        if fileManager.fileExists(atPath: stagedHelperURL.path) {
+            do { try fileManager.removeItem(at: stagedHelperURL) }
+            catch { succeeded = false }
+        }
+
+        if settingsWriteAttempted {
+            do { try restore(originalSettingsData, to: settingsURL) }
+            catch {
+                settingsRestored = false
+                succeeded = false
+            }
+        }
+        if manifestWriteAttempted {
+            do { try restore(originalManifestData, to: manifestURL) }
+            catch { succeeded = false }
+        }
+        if settingsRestored,
+           let createdBackupURL,
+           fileManager.fileExists(atPath: createdBackupURL.path) {
+            do { try fileManager.removeItem(at: createdBackupURL) }
+            catch { succeeded = false }
+        }
+        return succeeded
+    }
+
+    private func restore(_ data: Data?, to url: URL) throws {
+        if let data {
+            try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try atomicWriter(data, url)
+        } else if fileManager.fileExists(atPath: url.path) {
+            try fileManager.removeItem(at: url)
+        }
+    }
+
+    private nonisolated static func writeAtomically(_ data: Data, _ url: URL) throws {
         try data.write(to: url, options: .atomic)
     }
 }
