@@ -48,7 +48,7 @@ struct PopoverView: View {
                         }
                     }
                 } actions: {
-                    Button("Open Settings…") { openSettings() }
+                    Button("Open Settings…") { openSettingsWindow(openSettings) }
                         .buttonStyle(.glassProminent)
                 }
                 // `ContentUnavailableView` is greedy: left alone it reports no useful height,
@@ -79,9 +79,11 @@ struct PopoverView: View {
             .buttonStyle(.borderless).frame(width: 24, height: 24)
             .disabled(!store.providerOperationsEnabled)
             .help("Refresh now (⌘R)").keyboardShortcut("r")
-            SettingsLink { Image(systemName: "gearshape") }
+            // Not `SettingsLink`: it opens the window without activating the app, so a window
+            // that is already open behind another app stays there. See `openSettingsWindow`.
+            Button { openSettingsWindow(openSettings) } label: { Image(systemName: "gearshape") }
                 .buttonStyle(.borderless).frame(width: 24, height: 24)
-                .help("Settings… (⌘,)")
+                .help("Settings… (⌘,)").keyboardShortcut(",")
         }
         .frame(height: 28)
         .padding(.horizontal, DesignTokens.Space.x8)

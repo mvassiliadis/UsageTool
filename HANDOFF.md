@@ -99,7 +99,7 @@ Fixes:
 
 - Menu-bar insertion setters are strict no-ops when the value is unchanged.
 - Preference normalization and persistence are idempotent.
-- Settings explicitly activates the accessory app when shown so its window appears in front.
+- Settings explicitly activates the accessory app and raises its window on **every** open (`openSettingsWindow`, used by the gear, `Open Settings…` and the provider `Set up…` buttons) so it comes in front even when it is already open behind another app. The `orderFrontRegardless()` there is load-bearing: cooperative activation lets the frontmost app refuse `NSApp.activate()`, and Xcode does.
 - Regression coverage lives in `Tests/UsageToolTests/MenuBarSceneTests.swift`.
 - Manual checks and the invariant are documented in `Documentation/Manual-Verification.md`.
 

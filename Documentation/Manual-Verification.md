@@ -48,7 +48,9 @@ open -a /tmp/UsageToolDerivedData/Build/Products/Debug/UsageTool.app
 | 2 | `ps -o %cpu= -p $(pgrep -x UsageTool)` after ~5s idle | ~0.0. A pegged core means the scene-graph live-lock is back. |
 | 3 | `sample $(pgrep -x UsageTool) 2` | The main thread is parked in `mach_msg_trap` under `-[NSApplication run]`, **not** in `AppGraph.graphDidChange()`. |
 | 4 | Click the icon | The popover appears below the item, 340 pt wide, with the Usage header, refresh button and gear. |
-| 5 | Click the gear (`SettingsLink`) | The Settings window opens **in front** and UsageTool becomes frontmost. |
+| 5 | Click the gear | The Settings window opens **in front** and UsageTool becomes frontmost. |
+| 5a | With Settings open, activate another app (so Settings is buried), then click the icon and the gear again | Settings comes back **in front**. `onAppear` fires only on the first open, so this is the case that regresses if a call site stops going through `openSettingsWindow`. |
+| 5b | Repeat 5a with **Xcode** frontmost | Settings still comes to the front. Xcode does not yield to `NSApp.activate()` — cooperative activation lets the frontmost app keep the spot — so this case depends on `orderFrontRegardless()` and regresses if only the activation call is left. |
 | 6 | Dock | No Dock tile: `LSUIElement` keeps the activation policy at `.accessory` (`NSRunningApplication.activationPolicy == .accessory`). |
 | 7 | Settings → Menu Bar → Icon style → *Icon and summary* | The main item becomes icon + summary; with no providers connected it reads `— · — · —` (never `0%`). |
 | 8 | Settings → Menu Bar → Separate items → enable one | A second status item appears, e.g. `Codex —`. Disabling it removes that item and leaves the main one. |

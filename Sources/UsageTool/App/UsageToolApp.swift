@@ -151,10 +151,9 @@ struct UsageToolApp: App {
         Settings {
             SettingsView()
                 .environment(store)
-                // `LSUIElement` keeps the app at `.accessory` activation policy, so opening the
-                // Settings window does not bring the app forward and it can surface behind
-                // whatever was frontmost. Activate explicitly when the window appears.
-                .onAppear { NSApp.activate() }
+                // Backstop for a first open that did not come through `openSettingsWindow`;
+                // it fires only once, which is why every call site raises the window as well.
+                .onAppear { bringSettingsWindowForward() }
         }
         .windowResizability(.contentSize)
     }

@@ -291,7 +291,7 @@ Measured height ≈ 12 + 28 + 8 + 102 + 102 + 52 + 4 (two separators) + 8 + 20 +
 |---|---|
 | Title | `Text("Usage")`, `type.headline`, `.primary`, leading |
 | Refresh button | `Button { refreshAll() } label: { Image(systemName: "arrow.clockwise") }`, `.borderless`, 24×24 hit area, `.help("Refresh now (⌘R)")`, `.keyboardShortcut("r")`. While any provider is loading: `.symbolEffect(.rotate, isActive: isRefreshing)`; under Reduce Motion the symbol is replaced by a 12 pt `ProgressView()`. |
-| Settings button | `SettingsLink { Image(systemName: "gearshape") }`, `.borderless`, 24×24, `.help("Settings… (⌘,)")`. Opening Settings closes the popover. |
+| Settings button | `Button { openSettingsWindow(openSettings) } label: { Image(systemName: "gearshape") }`, `.borderless`, 24×24, `.help("Settings… (⌘,)")`, `.keyboardShortcut(",")`. Opening Settings closes the popover. **Not** `SettingsLink`: it cannot activate the accessory app, so a Settings window that is already open behind another app stays behind it. Every settings entry point goes through `openSettingsWindow`, which opens, calls `NSApp.activate()` and then raises the window with `orderFrontRegardless()` — activation alone is a request the frontmost app can keep (Xcode does). |
 | Spacing | buttons 4 pt apart, right-aligned, vertically centered on the 28 pt header |
 
 ### 4.4 Provider block anatomy (percent providers: Codex, Claude)
@@ -879,7 +879,7 @@ Settings: standard form navigation; `⌘1–4` switch tabs; `Esc` closes sheets.
 | Separate text items | one `MenuBarExtra(isInserted: $prefs.showCodexItem) { PopoverView(focus: .codex) } label: { Text("Codex 73%").monospacedDigit() }` per provider. Each scene presents its own window of the same view over the shared store (§3.3); the store dismisses any other open UsageTool window when one opens. |
 | Shared state | one `@Observable` `UsageStore` injected via `.environment(store)` into every scene: snapshots, provider states, expanded flags, presented-item flag |
 | Popover layout | `VStack` → header `HStack`, `ScrollView` (only when needed) of `ProviderBlockView`s separated by `Divider().padding(.horizontal, 16)`, footer `HStack` |
-| Header buttons | `Button` `.buttonStyle(.borderless)`, `SettingsLink` |
+| Header buttons | `Button` `.buttonStyle(.borderless)` (refresh, and settings via `openSettingsWindow`) |
 | Provider tile | `ZStack { RoundedRectangle(cornerRadius: 6).fill(accent.opacity(…)); Image("Provider/ClaudeSpark").renderingMode(.original).resizable().aspectRatio(contentMode: .fit).frame(width: 14, height: 14) }` — assets from `Design/Assets/ProviderIcons` imported into the asset catalog as vector (“Preserve Vector Data”), never `Image(systemName:)` for provider identity |
 | Hero number | `Text(value).font(.system(.title, design: .rounded).weight(.semibold)).monospacedDigit().contentTransition(.numericText(countsDown:))` |
 | Capacity bar | custom `CapacityBar: View` (Capsule track/fill; dotted `StrokeStyle(dash:)` when nil). *Alternative:* `Gauge(value:).gaugeStyle(.accessoryLinearCapacity).tint(accent)` — rejected because it cannot draw the “unknown” dotted track. Not used for OpenRouter. |

@@ -1,6 +1,48 @@
 import AppKit
 import SwiftUI
 
+/// Opens Settings and pulls its window in front of whatever the user is looking at.
+///
+/// `LSUIElement` keeps the app at `.accessory` activation policy, so neither `openSettings()`
+/// nor `SettingsLink` activates the app: an already-open window is ordered front *within* the
+/// app and stays buried behind the frontmost one. Activating from the scene's `onAppear` only
+/// covers the first open, because the view is never torn down again — so every call site opens
+/// through here instead.
+@MainActor
+func openSettingsWindow(_ openSettings: OpenSettingsAction) {
+    openSettings()
+    bringSettingsWindowForward()
+    // SwiftUI may only create the window, or order it front, on the next turn of the run loop.
+    Task { @MainActor in bringSettingsWindowForward() }
+}
+
+/// Activates the app and raises the Settings window.
+///
+/// `NSApp.activate()` is only a request: under macOS's cooperative activation the frontmost app
+/// can keep the front spot, and Xcode reliably does, which left Settings behind it. Raising the
+/// window itself does not go through activation, so `orderFrontRegardless()` gets it on screen
+/// whether or not the activation request is granted.
+@MainActor
+func bringSettingsWindowForward() {
+    NSApp.activate()
+    guard let window = settingsWindow() else { return }
+    window.makeKeyAndOrderFront(nil)
+    window.orderFrontRegardless()
+}
+
+/// SwiftUI owns the Settings window, so there is no reference to keep. Prefer its own window
+/// identifier and fall back on shape: the accessory app's only other windows are the borderless
+/// menu-bar panels and whatever panel is on top of Settings at the time.
+@MainActor
+private func settingsWindow() -> NSWindow? {
+    if let identified = NSApp.windows.first(where: {
+        $0.identifier?.rawValue.hasPrefix("com_apple_SwiftUI_Settings") == true
+    }) {
+        return identified
+    }
+    return NSApp.windows.first { $0.isVisible && $0.styleMask.contains(.titled) && !($0 is NSPanel) }
+}
+
 struct SettingsView: View {
     @Environment(UsageStore.self) private var store
 
@@ -77,28 +119,18 @@ private struct ProviderSettingsView: View {
     @State private var showClaudeSheet = false
     @State private var testingProvider: ProviderID?
     @State private var inlineError: String?
-    @State private var codexPathEntry = ""
 
     var body: some View {
         Form {
             providerSection(.codex) {
                 LabeledContent("Status") { statusLabel(.codex) }
-                LabeledContent("Executable") {
-                    TextField("Automatic", text: $codexPathEntry)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 200)
-                        .onSubmit { commitCodexPath(codexPathEntry) }
-                    Button("Choose…") { chooseCodexExecutable() }
-                    Button("Automatic") { commitCodexPath("") }
-                        .disabled(store.settings.preferences.codexExecutablePath.isEmpty)
-                }
-                codexResolutionRow
+                codexExecutableRow
                 if let snapshot = store.snapshot(for: .codex) {
                     LabeledContent("Windows", value: snapshot.windows.map { "\($0.label) \(UsageFormatters.percent($0.remainingFraction) ?? "—")" }.joined(separator: " · "))
                 }
                 HStack { Spacer(); testButton(.codex) }
             } footer: {
-                Text("Leave the path empty to search PATH, Homebrew, and the usual Node version-manager locations. Reads subscription limits only from the documented local Codex App Server. UsageTool never reads Codex credentials. This integration is experimental because the app-server command is not yet a production-stable interface.")
+                Text("UsageTool finds Codex on PATH, in Homebrew, and in the usual Node version-manager locations; choose an executable only to override that. Reads subscription limits only from the documented local Codex App Server. UsageTool never reads Codex credentials. This integration is experimental because the app-server command is not yet a production-stable interface.")
             }
 
             providerSection(.claude) {
@@ -148,70 +180,56 @@ private struct ProviderSettingsView: View {
             }
         }
         .sheet(isPresented: $showClaudeSheet) { ClaudeAdapterSheet() }
-        .task {
-            codexPathEntry = store.settings.preferences.codexExecutablePath
-            store.resolveCodexExecutable()
-        }
+        .task { store.resolveCodexExecutable() }
     }
 
-    /// Shows which binary the app will actually launch, because a GUI app's `PATH` is not the
-    /// user's shell `PATH` and "it works in Terminal" proves nothing here.
+    /// One row, because the path the app will actually launch is the only thing worth showing here:
+    /// a GUI app's `PATH` is not the user's shell `PATH`, so "it works in Terminal" proves nothing.
     @ViewBuilder
-    private var codexResolutionRow: some View {
-        if let resolution = store.codexExecutableResolution {
-            LabeledContent("Resolved") {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                        Text(resolution.url.path)
-                            .font(.system(.subheadline, design: .monospaced))
-                            .textSelection(.enabled)
-                            .lineLimit(1)
-                            .truncationMode(.head)
-                    }
-                    Text(resolutionDetail(resolution))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+    private var codexExecutableRow: some View {
+        LabeledContent("Executable") {
+            VStack(alignment: .leading, spacing: 6) {
+                if let resolution = store.codexExecutableResolution {
+                    statusLine(symbol: "checkmark.circle.fill", color: .green, text: resolution.url.path, monospaced: true)
+                    caption(resolution.origin == .configured ? "Chosen manually" : "Found automatically · \(resolution.origin.label)")
+                } else if let problem = store.codexExecutableProblem {
+                    statusLine(symbol: "exclamationmark.triangle.fill", color: .orange, text: problem.message, monospaced: false)
+                    if case .configuredPathNotExecutable(let path) = problem { caption(path, monospaced: true) }
+                    else { caption("Install Codex, or choose its executable.") }
                 }
-            }
-        } else if let problem = store.codexExecutableProblem {
-            LabeledContent("Resolved") {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                        Text(problem.message)
-                    }
-                    if case .configuredPathNotExecutable(let path) = problem {
-                        Text(path)
-                            .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
-                            .lineLimit(1)
-                            .truncationMode(.head)
-                    } else {
-                        Text("Install Codex, or choose its executable above.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                HStack {
+                    Button("Choose…") { chooseCodexExecutable() }
+                    if !store.settings.preferences.codexExecutablePath.isEmpty {
+                        Button("Use Automatic") { commitCodexPath("") }
                     }
                 }
             }
         }
     }
 
-    private func resolutionDetail(_ resolution: CodexExecutableResolution) -> String {
-        let source = resolution.origin == .configured
-            ? "Configured path"
-            : "Found automatically · \(resolution.origin.label)"
-        guard let interpreter = resolution.interpreterDirectories.first else { return source }
-        return "\(source) · launched with \(interpreter.path) on its PATH"
+    private func statusLine(symbol: String, color: Color, text: String, monospaced: Bool) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: symbol).foregroundStyle(color)
+            Text(text)
+                .font(monospaced ? .system(.subheadline, design: .monospaced) : .subheadline)
+                .textSelection(.enabled)
+                .lineLimit(1)
+                .truncationMode(.head)
+        }
+    }
+
+    private func caption(_ text: String, monospaced: Bool = false) -> some View {
+        Text(text)
+            .font(monospaced ? .system(.caption, design: .monospaced) : .caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .truncationMode(.head)
     }
 
     private func commitCodexPath(_ path: String) {
         let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
-        codexPathEntry = trimmed
-        if store.settings.preferences.codexExecutablePath != trimmed {
-            store.settings.preferences.codexExecutablePath = trimmed
-        }
+        guard store.settings.preferences.codexExecutablePath != trimmed else { return }
+        store.settings.preferences.codexExecutablePath = trimmed
         store.codexExecutablePathDidChange()
     }
 

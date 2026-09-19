@@ -141,6 +141,7 @@ struct ProviderBlockView: View {
         .onHover { hovering = $0 }
         .focusable()
         .focused($focused)
+        .focusEffectDisabled()
         .focusSection()
         .onKeyPress(.return) { store.toggleExpanded(provider); return .handled }
         .onKeyPress(.space) { store.toggleExpanded(provider); return .handled }
@@ -384,7 +385,7 @@ struct ProviderBlockView: View {
 
     private func showSettings() {
         store.openProviderSettings(provider)
-        openSettings()
+        openSettingsWindow(openSettings)
     }
 }
 
