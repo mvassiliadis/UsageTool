@@ -94,24 +94,41 @@ actor KeychainStore: SecretStore {
             query[kSecMatchLimit] = kSecMatchLimitOne
             return SecItemCopyMatching(query as CFDictionary, &item)
         }
-        guard found else { return nil }
-        guard let data = item as? Data else { throw KeychainError.invalidData }
-        return data
+        if found {
+            guard let data = item as? Data else { throw KeychainError.invalidData }
+            return data
+        }
+        // Reads and writes disagree about the data protection keychain: without the
+        // entitlement a read of it reports `errSecItemNotFound` while a write reports
+        // `errSecMissingEntitlement`. So `save` silently lands in the legacy keychain
+        // while `load` keeps searching the empty data protection one, and the secret
+        // looks lost on the next launch. Always check the legacy keychain too.
+        guard useDataProtection, let legacy = legacySecret() else { return nil }
+        observedBacking = .legacyFile
+        return legacy
+    }
+
+    /// Reads the secret straight from the legacy keychain, without disturbing
+    /// which keychain `status(_:)` has settled on.
+    private func legacySecret() -> Data? {
+        var query = query(dataProtection: false)
+        query[kSecReturnData] = true
+        query[kSecMatchLimit] = kSecMatchLimitOne
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess else { return nil }
+        return item as? Data
     }
 
     func delete() throws {
         _ = try performAllowingNotFound { query, _ in
             SecItemDelete(query as CFDictionary)
         }
+        // Disconnecting must not leave a copy behind in the other keychain.
+        if useDataProtection { _ = SecItemDelete(query(dataProtection: false) as CFDictionary) }
     }
 
     func contains() throws -> Bool {
-        try performAllowingNotFound { query, _ in
-            var query = query
-            query[kSecReturnData] = false
-            query[kSecMatchLimit] = kSecMatchLimitOne
-            return SecItemCopyMatching(query as CFDictionary, nil)
-        }
+        try load() != nil
     }
 
     /// Runs `operation` against the preferred keychain, retrying once against
@@ -144,13 +161,15 @@ actor KeychainStore: SecretStore {
         return true
     }
 
-    private var baseQuery: [CFString: Any] {
+    private var baseQuery: [CFString: Any] { query(dataProtection: useDataProtection) }
+
+    private func query(dataProtection: Bool) -> [CFString: Any] {
         var query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecAttrAccount: account,
         ]
-        if useDataProtection { query[kSecUseDataProtectionKeychain] = true }
+        if dataProtection { query[kSecUseDataProtectionKeychain] = true }
         return query
     }
 }
