@@ -135,9 +135,18 @@ final class MenuBarStatusItem: NSObject, NSWindowDelegate {
             }
             .environment(store)
         )
-        // The popover's height changes as provider rows expand and as content loads; this keeps
-        // the panel sized to it, anchored at the menu bar, without a second layout pass here.
-        content.sizingOptions = [.preferredContentSize]
+        // The popover's height changes as provider rows expand and as content loads; publishing
+        // the content's min/intrinsic/max size keeps the panel sized to it, anchored at the menu
+        // bar, without a second layout pass here.
+        //
+        // Not `.preferredContentSize`: AppKit applies that one by resizing the window *and
+        // displaying it* synchronously, so a size published from inside `NSHostingView.layout()`
+        // lays the same view out again on the same stack. `PopoverView` measures its provider
+        // list and feeds the measurement back into its own height, so the popover's size does
+        // change mid-pass on its first layout — and every nested pass repeated it until the main
+        // thread's stack was gone. `.standardBounds` goes through auto layout instead, which
+        // settles between passes. See `PopoverPanelTests`.
+        content.sizingOptions = .standardBounds
         panel.contentViewController = content
         panel.setContentSize(content.view.fittingSize)
         panel.setFrameTopLeftPoint(CGPoint(x: originX, y: itemFrame.minY - PopoverChrome.menuBarGap))
